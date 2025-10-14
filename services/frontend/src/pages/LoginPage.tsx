@@ -11,12 +11,10 @@ import {
     Text,
     Link as ChakraLink,
     Field,
-    Center,
     Input,
 } from "@chakra-ui/react";
 import { Link as ReactRouterLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { centerText } from '@yudiel/react-qr-scanner';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -68,6 +66,21 @@ export default function LoginPage() {
                             placeholder="••••••••"
                         />
                     </Field.Root>
+                    <Button
+                        variant="subtle"
+                        type="submit"
+                        colorScheme="teal"
+                        width="full"
+                        loading={loading}
+                    >
+                        Login
+                    </Button>
+                    <Text>
+                        Don't have an account?{' '}
+                        <ChakraLink as={ReactRouterLink} href="/signup" color="teal.500">
+                            Sign Up
+                        </ChakraLink>
+                    </Text>
                 </VStack>
 
             </Box>

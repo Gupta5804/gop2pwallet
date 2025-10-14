@@ -16,7 +16,7 @@ function App() {
       {/* Public Routes */}
       {/* These routes are accessible to everyone */}
       <Route path="/login" element={<LoginPage/>}/>
-      <Route path="signup" element={<SignupPage/>}/>
+      <Route path="/signup" element={<SignupPage/>}/>
 
     {/* Protected Routes */}
     {/* These routes are wrapped in the ProtectedRoute component to ensure authentication */}
