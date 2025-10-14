@@ -1,0 +1,19 @@
+# services/gopay-frontend/Dockerfile.dev
+
+# Use the official Node.js image
+FROM node:20-alpine
+WORKDIR /app
+
+# Copy package files and install dependencies
+# This is done first to leverage Docker layer caching
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Command to start the Vite development server
+CMD ["npm", "run", "dev"]

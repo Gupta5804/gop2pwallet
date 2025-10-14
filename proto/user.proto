@@ -1,0 +1,20 @@
+syntax = "proto3"; // user.proto
+
+package user; // package must match the directory structure
+
+option go_package = "github.com/Gupta5804/gop2pwallet/proto/user"; // Go package option
+
+service UserService { // Define a service
+    rpc GetUser(GetUserRequest) returns (GetUserResponse); // rpc method
+}
+
+message GetUserRequest { //define request message
+    string user_id = 1; // user ID field
+}
+
+message GetUserResponse { // define response message
+    string user_id = 1 ; // user ID field
+    string email = 2; // email field
+    string first_name = 3; // first name field
+    string last_name = 4; // last name field
+}

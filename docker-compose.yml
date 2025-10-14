@@ -1,0 +1,40 @@
+version: '3.8'
+
+services: # define services(containers) to be run
+  user-service: # name of the service
+    build: # build the image using the Dockerfile in the specified context
+      context: ./services/user-service # path to the directory containing the Dockerfile
+      dockerfile: Dockerfile # name of the Dockerfile
+    ports:
+      - "8080:8080" # map port 8080 of the container to port 8080 on the host
+    depends_on:
+      - db # ensure the db service is started before this one
+    environment:
+      - GIN_MODE=debug # set environment variable for Gin framework
+      - DATABASE_URL=postgres://user:password@db:5432/gop2pwallet?sslmode=disable # database connection string
+      - JWT_SECRET=password123 # secret key for JWT authentication
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000" # map port 3000 of the container to port 3000 on the host
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules # avoid overwriting node_modules in the container
+    depends_on:
+      - user-service # ensure the user-service is started before this one
+      
+  db:
+    image: postgres:14-alpine # use the official PostgreSQL image
+    ports: # map the database port
+      - "5432:5432" # map port 5432 of the container to port 5432 on the host
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data # Persist database data
+    environment:
+      - POSTGRES_USER=user # database username
+      - POSTGRES_PASSWORD=password # database password
+      - POSTGRES_DB=gop2pwallet # database name
+
+volumes:
+  postgres_data: # define a named volume for PostgreSQL data persistence

@@ -1,0 +1,22 @@
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+
+    volumes: [] # No volume mounts in production
+    environment:
+      - GIN_MODE=release # Set Gin to release mode for production
+      - JWT_SECRET=${JWT_SECRET} # Use environment variable for JWT secret
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile # Use production Dockerfile
+    ports:
+      -"80:80" # Serve frontend on standard HTTP port
+    volumes: [] # No volume mounts in production
+    
