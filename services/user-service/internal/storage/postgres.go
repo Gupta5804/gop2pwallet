@@ -15,6 +15,8 @@ type UserStore interface {
 	CreateUser(user *model.User) error
 	GetUserByEmail(email string) (*model.User, error)
 	GetUserByID(id string) (*model.User, error) // for jwt middleware
+	SearchUsers(query string) ([]*model.User, error) // for public user profiles 
+	GetUserByUsername(username string) (*model.User, error) // for public user profiles
 }
 // postgresStore holds the database connection object
 type PostgresStore struct { // Defining PostgresStore struct
@@ -78,6 +80,35 @@ func (s *PostgresStore) GetUserByID(id string) (*model.User, error) {
 	result := s.DB.First(&user, "id = ?", id)
 	if result.Error != nil {
 		return nil, result.Error // Return the error if the user is not found or any other error occurs
+	}
+	return &user, nil
+}
+
+func (s *PostgresStore) SearchUsers(query string) ([]*model.User, error) {
+	var users []*model.User
+
+	// The '%' wildcards allow for partial matches before and after the query string
+	searchQuery := "%" + query + "%"
+
+	// we user GORM's .Where with OR conditions to search across all desired fields
+	result := s.DB.Where(
+		"username ILIKE ? OR first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?",
+		searchQuery, searchQuery, searchQuery, searchQuery,
+	).Limit(10).Find(&users) // we add a limit to avoid too many results
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
+}
+// GetUserByUsername retrieves a single user from the database by their username
+func (s *PostgresStore) GetUserByUsername(username string) (*model.User, error) {
+	var user model.User
+	// Using .First is efficient for primary key lookups
+	result := s.DB.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		// this will correctly return gorm.ErrRecordNotFound if no user is found
+		return nil, result.Error
 	}
 	return &user, nil
 }

@@ -108,3 +108,61 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resp)
 }
+func (h *UserHandler) SearchUsers(c *gin.Context) {
+	// 1. Get the search query from the URL parameters
+	query := c.Query("q")
+	if query == "" {
+		c.JSON(http.StatusBadRequest,gin.H{"error":"Query parameter 'q' is required"})
+		return
+	}
+
+	// 2. Call the service layer to perform the search
+	users, err := h.service.SearchUsers(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search users"})
+		return
+	}
+
+	// 3. Convert the list of User models to UserResponse DTOs
+	var userResponses []model.UserResponse
+	for _, user := range users {
+		userResponses = append(userResponses, model.UserResponse{
+			ID:		user.ID,
+			Username:	user.Username,
+			FirstName:	user.FirstName,
+			LastName:	user.LastName,
+			Email:		user.Email,
+			CreatedAt:	user.CreatedAt,
+		})
+	}
+
+	// if no users found, return empty array instead of null
+	if userResponses == nil {
+		userResponses = []model.UserResponse{}
+	}
+	c.JSON(http.StatusOK, userResponses)
+
+}
+
+func (h *UserHandler) GetUserProfile(c *gin.Context) {
+	// 1. Get the user ID from the URL parameters
+	username := c.Param("username")
+
+	//2. Call the service layer to fetch the user profile
+	user, err := h.service.GetUserProfileByUsername(username)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// 3. Format the response using our safe UserResponse DTO
+	resp := model.UserResponse{
+		ID:		user.ID,
+		Username:	user.Username,
+		FirstName:	user.FirstName,
+		LastName:	user.LastName,
+		Email:		user.Email,
+		CreatedAt:	user.CreatedAt,
+	}
+	c.JSON(http.StatusOK, resp)
+}

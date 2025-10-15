@@ -17,6 +17,8 @@ type UserService interface {
 	Register(req *model.RegisterUserRequest) (*model.User, error)
 	Login(req *model.LoginUserRequest) (string, error)
 	GetUserProfile(id string) (*model.User, error) // new method to get user profile
+	SearchUsers(query string) ([]*model.User, error) // new method to search users
+	GetUserProfileByUsername(username string) (*model.User, error) // new method to get user profile by username
 }
 
 type userService struct {
@@ -85,4 +87,12 @@ func (s *userService) Login(req *model.LoginUserRequest) (string, error) {
 
 func (s *userService) GetUserProfile(id string) (*model.User, error) {
 	return s.store.GetUserByID(id)
+}
+
+func (s *userService) SearchUsers(query string) ([]*model.User, error) {
+	return s.store.SearchUsers(query)
+}
+
+func (s *userService) GetUserProfileByUsername(username string) (*model.User, error) {
+	return s.store.GetUserByUsername(username)
 }

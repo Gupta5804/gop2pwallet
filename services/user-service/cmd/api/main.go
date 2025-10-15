@@ -38,6 +38,8 @@ func main() {
 		{
 			userPublic.POST("/register", userHandler.RegisterUser) // Register user endpoint
 			userPublic.POST("/login",userHandler.LoginUser)
+			userPublic.GET("/search",userHandler.SearchUsers) // Search users endpoint
+			userPublic.GET("/:username",userHandler.GetUserProfile) // Get user by ID endpoint
 		}
 		// v1.GET("/health",func(c *gin.Context){
 		// 	c.JSON(200,gin.H{
