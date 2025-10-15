@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/config"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/model"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/config"
 )
 
 type UserService interface {
@@ -20,14 +20,14 @@ type UserService interface {
 }
 
 type userService struct {
-	store storage.UserStore // Using the UserStore interface
+	store  storage.UserStore // Using the UserStore interface
 	config *config.Config
 }
 
 // NewUserService is a factory function to create a new UserService instance
 func NewUserService(store storage.UserStore, cfg *config.Config) UserService {
 	return &userService{
-		store: store,
+		store:  store,
 		config: cfg,
 	}
 }
@@ -40,6 +40,7 @@ func (s *userService) Register(req *model.RegisterUserRequest) (*model.User, err
 	}
 
 	user := &model.User{
+		Username:     req.Username,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Email:        strings.ToLower(req.Email),

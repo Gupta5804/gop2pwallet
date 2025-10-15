@@ -46,6 +46,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) { // Handler function for use
 	// 4. Create and send the success response
 	resp := model.UserResponse{
 		ID:        user.ID,
+		Username:  req.Username,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
@@ -98,11 +99,12 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	// 3. Format the response using our safe UserResponse DTO
 	// This prevents leaking sensitive information like password hashes
 	resp := model.UserResponse{
-		ID:		user.ID,
+		ID:        user.ID,
+		Username:  user.Username,
 		FirstName: user.FirstName,
-		LastName: user.LastName,
-		Email: user.Email,
+		LastName:  user.LastName,
+		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 	}
-	c.JSON(http.StatusOK,resp)
+	c.JSON(http.StatusOK, resp)
 }
