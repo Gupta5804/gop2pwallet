@@ -27,17 +27,43 @@ func main() {
 
 
 	router:= gin.Default()
-	v1 := router.Group("/v1") // Version 1 API group
+
+	// 4. Define routes and apply middleware
+	// Create a top-level route group for versioning
+	// This allows for future versions of the API to coexist
+	v1 := router.Group("/api/v1") // Version 1 API group
 	{
-		v1.GET("/health",func(c *gin.Context){
-			c.JSON(200,gin.H{
-				"Status":"UP",
-				"Service":"user-service",
-			})
-		})
-		v1.POST("/users/register", userHandler.RegisterUser) // Register user endpoint
-		v1.POST("/users/login",userHandler.LoginUser)
+		// Sub-group for public routes (no authentication required)
+		userPublic := v1.Group("/users")
+		{
+			userPublic.POST("/register", userHandler.RegisterUser) // Register user endpoint
+			userPublic.POST("/login",userHandler.LoginUser)
+		}
+		// v1.GET("/health",func(c *gin.Context){
+		// 	c.JSON(200,gin.H{
+		// 		"Status":"UP",
+		// 		"Service":"user-service",
+		// 	})
+		// })
+		// Sub-group fro routes that require JWT authentication
+		authProtected := v1.Group("/auth")
+		authProtected.Use(api.AuthMiddleware(cfg)) // Applying the AuthMiddleware to this group
+		{
+			// The '/me' will now be at /api/v1/auth/me
+			authProtected.GET("/me", userHandler.GetMe)
+		}
+
+		// (future) Sub-group for public user profile routes (no authentication required)
+		// for example, /api/v1/users/search?q=...
+
 	}
+	// health check endpoint
+	router.GET("/health",func(c *gin.Context){
+		c.JSON(200,gin.H{
+			"Status":"UP",
+			"Service":"user-service",
+		})
+	})
 	log.Println("Starting user-service on port 8080")
 	
 	if err := router.Run(":8080"); err != nil {

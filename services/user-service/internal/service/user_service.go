@@ -16,6 +16,7 @@ import (
 type UserService interface {
 	Register(req *model.RegisterUserRequest) (*model.User, error)
 	Login(req *model.LoginUserRequest) (string, error)
+	GetUserProfile(id string) (*model.User, error) // new method to get user profile
 }
 
 type userService struct {
@@ -79,4 +80,8 @@ func (s *userService) Login(req *model.LoginUserRequest) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (s *userService) GetUserProfile(id string) (*model.User, error) {
+	return s.store.GetUserByID(id)
 }

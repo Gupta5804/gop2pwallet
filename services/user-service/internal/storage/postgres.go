@@ -14,6 +14,7 @@ import (
 type UserStore interface {
 	CreateUser(user *model.User) error
 	GetUserByEmail(email string) (*model.User, error)
+	GetUserByID(id string) (*model.User, error) // for jwt middleware
 }
 // postgresStore holds the database connection object
 type PostgresStore struct { // Defining PostgresStore struct
@@ -67,6 +68,16 @@ func (s *PostgresStore) GetUserByEmail(email string) (*model.User, error) {
 	result := s.DB.Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
+	}
+	return &user, nil
+}
+
+func (s *PostgresStore) GetUserByID(id string) (*model.User, error) {
+	var user model.User
+	// GORM's .First method is efficient for primary key lookups
+	result := s.DB.First(&user, "id = ?", id)
+	if result.Error != nil {
+		return nil, result.Error // Return the error if the user is not found or any other error occurs
 	}
 	return &user, nil
 }

@@ -78,3 +78,31 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	// 4. Create and send the success response with JWT token
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
+
+func (h *UserHandler) GetMe(c *gin.Context) {
+	// 1. Retrieve the user ID from the Gin context (set by the AuthMiddleware)
+	// Our middleware sets "userID" in the context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	// 2. Call the service layer to fetch the user profile
+	user, err := h.service.GetUserProfile(userID.(string))
+	if err != nil {
+		// this c
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	}
+
+	// 3. Format the response using our safe UserResponse DTO
+	// This prevents leaking sensitive information like password hashes
+	resp := model.UserResponse{
+		ID:		user.ID,
+		FirstName: user.FirstName,
+		LastName: user.LastName,
+		Email: user.Email,
+		CreatedAt: user.CreatedAt,
+	}
+	c.JSON(http.StatusOK,resp)
+}
