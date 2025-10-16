@@ -15,7 +15,7 @@ type User struct { // User model definition
 	Email        string `gorm:"type:varchar(255);uniqueIndex;not null"`
 	// passwordhash can be null for users who register via Google OAuth
 	PasswordHash string `gorm:"type:varchar(255);"`
-	GoogleID     string `gorm:"type:varchar(255);uniqueIndex"` // Google OAuth ID, unique if present
+	GoogleID     string `gorm:"type:varchar(255);"` // Google OAuth ID, unique if present
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index"` // Soft delete field

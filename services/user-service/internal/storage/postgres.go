@@ -17,6 +17,7 @@ type UserStore interface {
 	GetUserByID(id string) (*model.User, error) // for jwt middleware
 	SearchUsers(query string) ([]*model.User, error) // for public user profiles 
 	GetUserByUsername(username string) (*model.User, error) // for public user profiles
+	GetUserByGoogleID(googleID string) (*model.User, error) // for oauth2/google
 }
 // postgresStore holds the database connection object
 type PostgresStore struct { // Defining PostgresStore struct
@@ -111,4 +112,12 @@ func (s *PostgresStore) GetUserByUsername(username string) (*model.User, error) 
 		return nil, result.Error
 	}
 	return &user, nil
+}
+func (s *PostgresStore) GetUserByGoogleID(googleID string) (*model.User, error) {
+	var user model.User
+	result := s.DB.Where("google_id = ?", googleID).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user,nil
 }

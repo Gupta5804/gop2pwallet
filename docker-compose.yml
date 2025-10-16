@@ -7,6 +7,8 @@ services: # define services(containers) to be run
       dockerfile: Dockerfile # name of the Dockerfile
     ports:
       - "8080:8080" # map port 8080 of the container to port 8080 on the host
+    env_file:
+      - ./services/user-service/.env 
     depends_on:
       - db # ensure the db service is started before this one
     environment:

@@ -15,6 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not load configuration: %v", err)
 	}
+	service.InitializeGoogleOauthConfig(cfg)
 	// 1. Create the storage layer (PostgresStore) (dependency)
 	store, err := storage.NewPostgresStore() // Creating a new PostgresStore
 	if err != nil {
@@ -36,10 +37,9 @@ func main() {
 		// Sub-group for public routes (no authentication required)
 		userPublic := v1.Group("/users")
 		{
-			userPublic.POST("/register", userHandler.RegisterUser) // Register user endpoint
-			userPublic.POST("/login",userHandler.LoginUser)
 			userPublic.GET("/search",userHandler.SearchUsers) // Search users endpoint
 			userPublic.GET("/:username",userHandler.GetUserProfile) // Get user by ID endpoint
+			
 		}
 		// v1.GET("/health",func(c *gin.Context){
 		// 	c.JSON(200,gin.H{
@@ -48,7 +48,14 @@ func main() {
 		// 	})
 		// })
 		// Sub-group fro routes that require JWT authentication
-		authProtected := v1.Group("/auth")
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", userHandler.RegisterUser) // Register user endpoint
+			auth.POST("/login",userHandler.LoginUser) // Login user endpoint
+			auth.GET("/google/login",userHandler.HandleGoogleLogin) // for oauth2/google
+			auth.GET("/google/callback",userHandler.HandleGoogleCallback) // for oauth2/google
+		}
+		authProtected := auth.Group("") // Protected routes group
 		authProtected.Use(api.AuthMiddleware(cfg)) // Applying the AuthMiddleware to this group
 		{
 			// The '/me' will now be at /api/v1/auth/me
