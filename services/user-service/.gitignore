@@ -1,0 +1,6 @@
+# Ignore dotenv files containing secrets
+.env
+.env.*
+
+# Keep example/template files in the repo
+!.env.example
