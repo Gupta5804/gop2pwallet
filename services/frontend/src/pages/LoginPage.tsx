@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as ReactRouterLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import apiClient from '@/services/api';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
