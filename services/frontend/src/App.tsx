@@ -1,6 +1,7 @@
 // src/App.tsx
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from '@/components/ui/toaster';
 
 // Import your pages
 import LoginPage from './pages/LoginPage';
@@ -12,6 +13,7 @@ import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (
+    <>
     <Routes>
       {/* Public Routes */}
       {/* These routes are accessible to everyone */}
@@ -28,6 +30,8 @@ function App() {
       {/* <Route path="/users/:username" element={<UserProfilePage />} /> */}
     </Route>
     </Routes>
+    <Toaster/>
+    </>
   )
 }
 

@@ -10,8 +10,8 @@ import (
 type User struct { // User model definition
 	ID           string `gorm:"type:uuid;primary_key;default:gen_random_uuid()"` // UUID primary key with default generation
 	Username	 string `gorm:"type:varchar(255);uniqueIndex;not null"`          // Username field
-	FirstName    string `gorm:"type:varchar(255);not null"`                      // First name field
-	LastName     string `gorm:"type:varchar(255);not null"`                      // Last name field
+	FirstName    string `gorm:"type:varchar(255);"`                      // First name field
+	LastName     string `gorm:"type:varchar(255);"`                      // Last name field
 	Email        string `gorm:"type:varchar(255);uniqueIndex;not null"`
 	// passwordhash can be null for users who register via Google OAuth
 	PasswordHash string `gorm:"type:varchar(255);"`

@@ -15,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not load configuration: %v", err)
 	}
-	service.InitializeGoogleOauthConfig(cfg)
+	// service.InitializeGoogleOauthConfig(cfg)
 	// 1. Create the storage layer (PostgresStore) (dependency)
 	store, err := storage.NewPostgresStore() // Creating a new PostgresStore
 	if err != nil {
@@ -52,8 +52,8 @@ func main() {
 		{
 			auth.POST("/register", userHandler.RegisterUser) // Register user endpoint
 			auth.POST("/login",userHandler.LoginUser) // Login user endpoint
-			auth.GET("/google/login",userHandler.HandleGoogleLogin) // for oauth2/google
-			auth.GET("/google/callback",userHandler.HandleGoogleCallback) // for oauth2/google
+			auth.POST("/google",userHandler.HandleGoogleTokenLogin) // for oauth2/google
+			
 		}
 		authProtected := auth.Group("") // Protected routes group
 		authProtected.Use(api.AuthMiddleware(cfg)) // Applying the AuthMiddleware to this group

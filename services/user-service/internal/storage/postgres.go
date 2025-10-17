@@ -12,12 +12,13 @@ import (
 )
 
 type UserStore interface {
-	CreateUser(user *model.User) error
+	CreateUser(user *model.User) (*model.User, error)
 	GetUserByEmail(email string) (*model.User, error)
 	GetUserByID(id string) (*model.User, error) // for jwt middleware
 	SearchUsers(query string) ([]*model.User, error) // for public user profiles 
 	GetUserByUsername(username string) (*model.User, error) // for public user profiles
 	GetUserByGoogleID(googleID string) (*model.User, error) // for oauth2/google
+	UpdateUser(user *model.User) error
 }
 // postgresStore holds the database connection object
 type PostgresStore struct { // Defining PostgresStore struct
@@ -56,13 +57,21 @@ func NewPostgresStore() (*PostgresStore, error) { // Function to create a new Po
 
 // ---- User Management Methods ----
 // CreateUser inserts a new user record into the database
-func (s *PostgresStore) CreateUser(user *model.User) error {
+func (s *PostgresStore) CreateUser(user *model.User) (*model.User, error) {
 	// GORM's .Create method handles the SQL INSERT statement for you
 	// concise and less error-prone than writing raw SQL
-	result := s.DB.Create(user)
-	return result.Error
+	
+	if err := s.DB.Create(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
-
+func (s *PostgresStore) UpdateUser(user *model.User) error {
+	if err := s.DB.Save(user).Error; err != nil {
+		return err
+	}
+	return nil
+}
 // GetUserByEmail retrieves a single user from the database by their email address
 func (s *PostgresStore) GetUserByEmail(email string) (*model.User, error) {
 	var user model.User

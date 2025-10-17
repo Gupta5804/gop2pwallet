@@ -1,8 +1,8 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	// "crypto/rand"
+	// "encoding/base64"
 	"net/http" // Importing net/http for HTTP status codes
 	"strings"
 
@@ -19,7 +19,9 @@ import (
 type UserHandler struct {
 	service service.UserService
 }
-
+type GoogleLoginRequest struct {
+	GoogleToken string `json:"googleToken" binding:"required"`
+}
 // NewUserHandler is a factory function to create a new UserHandler instance
 func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{service: userService}
@@ -34,7 +36,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) { // Handler function for use
 		return
 	}
 	// 2. Call the service layer to handle business logic
-	user, err := h.service.Register(&req)
+	token, err := h.service.Register(&req)
 	if err != nil {
 		// 3. Translate service errors to appropriate HTTP responses
 		if strings.Contains(err.Error(), "duplicate key value") {
@@ -45,16 +47,8 @@ func (h *UserHandler) RegisterUser(c *gin.Context) { // Handler function for use
 		return
 	}
 
-	// 4. Create and send the success response
-	resp := model.UserResponse{
-		ID:        user.ID,
-		Username:  req.Username,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-	}
-	c.JSON(http.StatusCreated, resp)
+	
+	c.JSON(http.StatusCreated, gin.H{"token": token})
 }
 
 // LoginUser handles user login requests
@@ -168,43 +162,41 @@ func (h *UserHandler) GetUserProfile(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resp)
 }
-func (h *UserHandler) HandleGoogleLogin(c *gin.Context) {
-	// 1. Generate a random state string to prevent CSRF attacks
-	b := make([]byte, 16)
-	rand.Read(b)
-	oauthState := base64.URLEncoding.EncodeToString(b)
-
-	// 2. Save the `state` in a secure, httpOnly cookie with a 10-minute expiration
-	c.SetCookie("oauthstate", oauthState, 600, "/", "localhost",false,true)
-
-	// 3. Get the login URL from the service layer , passing the `state` string
-	url := h.service.GetGoogleLoginURL(oauthState)
-
-	// 4. Redirect the user's browser to the Google sign-in page
-	c.Redirect(http.StatusTemporaryRedirect,url)
-}
-
-func (h *UserHandler) HandleGoogleCallback(c *gin.Context) {
-	// 1. Verify the state cookie to prevent CSRF attacks
-	oauthState, _ := c.Cookie("oauthstate")
-	if c.Query("state") != oauthState {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OAuth state"})
+func (h *UserHandler) HandleGoogleTokenLogin(c *gin.Context) {
+	var req GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
-	// 2. Get the authorization code from the query parameters
-	code := c.Query("code")
-	
-	// 3. Pass the code to the service layer to handle the OAuth flow
-	token, err := h.service.HandleGoogleCallback(code)
+	token, err := h.service.ProcessGoogleTokenLogin(req.GoogleToken)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
 		return
 	}
-
-	// 4. On success, redirect the user to the frontend Dashboard
-	// we pass the token as a URL parameter
-	// The frontend will be responsible for storing it (e.g. in localStorage)
-	// In a real application, consider using HTTP-only cookies for better security
-	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/dashboard?token="+token)
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
+
+// func (h *UserHandler) HandleGoogleCallback(c *gin.Context) {
+// 	// 1. Verify the state cookie to prevent CSRF attacks
+// 	oauthState, _ := c.Cookie("oauthstate")
+// 	if c.Query("state") != oauthState {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OAuth state"})
+// 		return
+// 	}
+// 	// 2. Get the authorization code from the query parameters
+// 	code := c.Query("code")
+	
+// 	// 3. Pass the code to the service layer to handle the OAuth flow
+// 	token, err := h.service.HandleGoogleCallback(code)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// 4. On success, redirect the user to the frontend Dashboard
+// 	// we pass the token as a URL parameter
+// 	// The frontend will be responsible for storing it (e.g. in localStorage)
+// 	// In a real application, consider using HTTP-only cookies for better security
+// 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/dashboard?token="+token)
+// }
 

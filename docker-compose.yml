@@ -19,6 +19,8 @@ services: # define services(containers) to be run
     build:
       context: ./services/frontend
       dockerfile: Dockerfile.dev
+    env_file:
+      - ./services/frontend/.env.local
     ports:
       - "3000:3000" # map port 3000 of the container to port 3000 on the host
     volumes:

@@ -1,27 +1,27 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useContext, useState, ReactNode } from "react";
-import axios from "axios"; // Ensure axios is installed for API calls
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import apiClient from "@/services/api";
 
 // Define the shape of your user object
 interface User {
-    userId: string;
-    token: string;
+    id: string;
+    username: string;
     email: string;
-    firstName: string;
-    lastName: string;
 }
+
 
 // Define the shape of the context value
 interface AuthContextType {
-    currentUser: User | null; 
-    login: (email: string, password: string) => Promise<void>;
-    logout: () =>void; 
-    loading: boolean;
+    token: string | null;
+    user: User | null;
     isAuthenticated: boolean;
+    isLoading: boolean;
+    login: (token: string) => void;
+    logout: ()=> void;
 }
 
 // 1. Create the AuthContext with default values
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Define the props for the AuthProvider component
 interface AuthProviderProps {
@@ -31,43 +31,60 @@ interface AuthProviderProps {
 // 2. Create the AuthProvider component
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const login = async (email: string, password: string) => {
-        setLoading(true);
-        try {
-            const response = await axios.post('/api/v1/users/login', { email, password});
-            const user: User = response.data;
-            setCurrentUser(user);
-            localStorage.setItem('authToken', user.token); // Store token in localStorage
-        } catch (error) {
-            console.error("Login failed", error);
-            // in a real app, handle errors appropriately
-        } finally {
-            setLoading(false);
-        }
+    useEffect(() => {
+        const fetchUser = async () => {
+            if(token) {
+                try {
+                    // fetch user's data using the token
+                    const response = await apiClient.get('/auth/me');
+                    setUser(response.data);
+                } catch (error) {
+                    console.error('Failed to fetch user. Token might be invalid.', error);
+                    // if token is bad, log the user out
+                    logout();
+                }
+            }
+            setIsLoading(false);
+        };
+
+        fetchUser();
+    }, [token]);
+
+    // function to set the token in state and local storage
+    const login = (newToken: string) => {
+        localStorage.setItem('token',newToken);
+        setToken(newToken);
     };
+
+    // function to clear token and user data
     const logout = () => {
-        setCurrentUser(null);
-        localStorage.removeItem('authToken'); // Remove token from localStorage
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        delete apiClient.defaults.headers.common['Authorization'];
     };
+
     const value = {
-        currentUser,
+        token,
+        user,
+        isAuthenticated: !!token,
+        isLoading,
         login,
         logout,
-        loading,
-        isAuthenticated: !!currentUser, // true if currentUser is not null
     };
-    return <AuthContext.Provider value = {value}>{children}</AuthContext.Provider>
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // 3. Create a custom hook to use the AuthContext
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (!context) {
+    if (context === undefined) {
         throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
-}
+};
 
