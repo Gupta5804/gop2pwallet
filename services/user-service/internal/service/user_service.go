@@ -109,7 +109,11 @@ func (s *userService) SearchUsers(query string) ([]*model.User, error) {
 }
 
 func (s *userService) GetUserProfileByUsername(username string) (*model.User, error) {
-	return s.store.GetUserByUsername(username)
+	user, err := s.store.GetUserByUsername(username)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return user, nil
 }
 
 // func (s *userService) GetGoogleLoginURL(state string) string {

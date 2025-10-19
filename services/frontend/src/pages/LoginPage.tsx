@@ -12,9 +12,10 @@ import {
     Link as ChakraLink,
     Field,
     Input,
-    Center,
     HStack,
-    Separator
+    Separator,
+    Center,
+    Spacer
 
 } from "@chakra-ui/react";
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
@@ -149,9 +150,10 @@ export default function LoginPage() {
                         </ChakraLink>
                     </Text>
                 </VStack>
-                <HStack my={4}>
-                    <Separator orientation="vertical" />
-                        <Text fontSize="sm" alignContent="center" whiteSpace="nowrap">OR</Text>
+                <HStack my={4} align="center">
+                    <Spacer/>
+                        <Text fontSize="sm" alignSelf="center" whiteSpace="nowrap">OR</Text>
+                    <Spacer/>
                 </HStack>
                 <Box>
                     <GoogleLogin
