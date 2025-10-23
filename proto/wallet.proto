@@ -1,0 +1,54 @@
+syntax = "proto3"; // wallet.proto
+
+package wallet;
+
+option go_package = "github.com/Gupta5804/gop2pwallet/proto";
+
+service WalletService {
+    // Callet by user-service on registration
+    rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+
+    // Called by our own REST API
+    rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+
+
+    // Called by transaction-service
+    rpc CreditWallet(CreditWalletRequest) returns (CreditWalletResponse);
+    rpc DebitWallet(DebitWalletRequest) returns (DebitWalletResponse);
+}
+
+message CreateWalletRequest {
+    string user_id = 1;
+}
+message CreateWalletResponse {
+    string wallet_id = 1;
+    string user_id = 2;
+}
+
+message GetBalanceRequest {
+    string user_id = 1; // User ID from JWT token
+}
+
+message GetBalanceResponse {
+    double balance = 1;
+    string currency = 2;
+}
+
+message CreditWalletRequest {
+    string user_id = 1;
+    double amount = 2;
+}
+message CreditWalletResponse {
+    bool success = 1;
+    double new_balance = 2;
+}
+
+message DebitWalletRequest {
+    string user_id = 1;
+    double amount = 2;
+}
+message DebitWalletResponse {
+    bool success = 1;
+    double new_balance = 2;
+    string error = 3;
+}

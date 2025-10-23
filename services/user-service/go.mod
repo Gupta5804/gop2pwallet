@@ -71,3 +71,5 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gorm.io/gorm v1.31.0
 )
+// This maps the exact package import to its local directory
+replace github.com/Gupta5804/gop2pwallet => ../..
