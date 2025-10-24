@@ -11,7 +11,20 @@ services:
     environment:
       - GIN_MODE=release # Set Gin to release mode for production
       - JWT_SECRET=${JWT_SECRET} # Use environment variable for JWT secret
-
+      - DATABASE_URL=${DATABASE_URL} # Use environment variable for database URL
+  wallet-service:
+    build:
+      context: ./services/wallet-service
+      dockerfile: Dockerfile
+    volumes: []
+    depends_on:
+      - db
+    environment:
+      - GIN_MODE=release
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - WALLET_SERVICE_REST_PORT=:8081
+      - WALLET_SERVICE_GRPC_PORT=:50052
   frontend:
     build:
       context: ./services/frontend

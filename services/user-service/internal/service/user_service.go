@@ -3,16 +3,20 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
+	pb "github.com/Gupta5804/gop2pwallet/proto/user"
+	walletPB "github.com/Gupta5804/gop2pwallet/proto/wallet"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/config"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/model"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	// for oauth2/google
 
 	// "google.golang.org/api/oauth2/v2"
@@ -48,15 +52,25 @@ type UserService interface {
 }
 
 type userService struct {
+	pb.UnimplementedUserServiceServer
 	store  storage.UserStore // Using the UserStore interface
 	config *config.Config
+	walletServiceClient walletPB.WalletServiceClient
 }
 
 // NewUserService is a factory function to create a new UserService instance
 func NewUserService(store storage.UserStore, cfg *config.Config) UserService {
+	//Connect to the WalletServiceClient to make gRPC calls to the wallet service
+	//"wallet-service:50052" matches the service name and gRPC port of the wallet service
+	conn, err := grpc.NewClient("wallet-service:50052",grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to wallet service: %v", err)
+	}
+	walletClient := walletPB.NewWalletServiceClient(conn)
 	return &userService{
 		store:  store,
 		config: cfg,
+		walletServiceClient: walletClient,
 	}
 }
 
@@ -74,11 +88,23 @@ func (s *userService) Register(req *model.RegisterUserRequest) (string, error) {
 		Email:        strings.ToLower(req.Email),
 		PasswordHash: string(hashedPassword),
 	}
+	// store user to database
 	createdUser, err := s.store.CreateUser(user)
 	if err != nil {
 		return "", err
 	}
+	// call wallet service to create a new wallet for the user
+	_, err = s.walletServiceClient.CreateWallet(context.Background(), &walletPB.CreateWalletRequest{
+		UserId: createdUser.ID,
+	})
+	if err != nil {
+		// This is a critical issue. For now, we just log the error and return an error message to the user
+		log.Printf("Failed to create wallet for user %s: %v", createdUser.ID, err)
+		return "", fmt.Errorf("failed to create wallet for user: %w", err)
+		// in real app we might want to roll back the user creation
+	}
 	return s.generateJWT(createdUser)
+	
 }
 
 // Login contains the business logic for authenticating a user and generating a JWT token upon successful login

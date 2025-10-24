@@ -3,11 +3,12 @@ module github.com/Gupta5804/gop2pwallet/services/user-service
 go 1.24.2
 
 require (
+	github.com/Gupta5804/gop2pwallet v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/oauth2 v0.32.0
 	google.golang.org/api v0.252.0
+	google.golang.org/grpc v1.75.1
 	gorm.io/driver/postgres v1.6.0
 )
 
@@ -19,7 +20,6 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -33,8 +33,8 @@ require (
 	go.opentelemetry.io/otel v1.37.0 // indirect
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	golang.org/x/oauth2 v0.32.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
-	google.golang.org/grpc v1.75.1 // indirect
 )
 
 require (
@@ -71,5 +71,6 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gorm.io/gorm v1.31.0
 )
+
 // This maps the exact package import to its local directory
 replace github.com/Gupta5804/gop2pwallet => ../..

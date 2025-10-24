@@ -3,8 +3,8 @@ version: '3.8'
 services: # define services(containers) to be run
   user-service: # name of the service
     build: # build the image using the Dockerfile in the specified context
-      context: ./services/user-service # path to the directory containing the Dockerfile
-      dockerfile: Dockerfile # name of the Dockerfile
+      context: . # path to the directory containing the Dockerfile
+      dockerfile: ./services/user-service/Dockerfile # name of the Dockerfile
     ports:
       - "8080:8080" # map port 8080 of the container to port 8080 on the host
     env_file:
@@ -13,8 +13,19 @@ services: # define services(containers) to be run
       - db # ensure the db service is started before this one
     environment:
       - GIN_MODE=debug # set environment variable for Gin framework
-      - DATABASE_URL=postgres://user:password@db:5432/gop2pwallet?sslmode=disable # database connection string
-      - JWT_SECRET=password123 # secret key for JWT authentication
+  wallet-service:
+    build:
+      context: .
+      dockerfile: ./services/wallet-service/Dockerfile
+    ports:
+      - "8081:8081"
+      - "50052:50052"
+    env_file:
+      - ./services/user-service/.env
+    depends_on:
+      - db
+    environment:
+      - GIN_MODE=debug
   frontend:
     build:
       context: ./services/frontend

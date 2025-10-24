@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"fmt"
 	"net"
 
 	pb "github.com/Gupta5804/gop2pwallet/proto/wallet"
@@ -14,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func main(){
+func main() {
 	// 1. Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -34,12 +33,12 @@ func main(){
 
 	// 5. Start the gRPC server in a goroutine
 	go func() {
-		lis, err := net.Listen("tcp",cfg.GRPCPort)
+		lis, err := net.Listen("tcp", cfg.GRPCPort) // listen on gRPC port
 		if err != nil {
 			log.Fatalf("Failed to listen: %v", err)
 		}
-		s := grpc.NewServer()
-		pb.RegisterWalletServiceServer(s,walletService)
+		s := grpc.NewServer() // create a new gRPC server
+		pb.RegisterWalletServiceServer(s, walletService) // register the WalletService server
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
@@ -50,7 +49,7 @@ func main(){
 	router := gin.Default()
 
 	// define auth middleware
-	authMiddleware:= api.AuthMiddleWare(cfg)
+	authMiddleware := api.AuthMiddleWare(cfg)
 
 	// Setup routes
 	v1 := router.Group("/api/v1")
@@ -62,7 +61,7 @@ func main(){
 	}
 
 	log.Printf("REST server listening on %s", cfg.RESTPort)
-	if err := router.Run(cfg.RESTPort); err != nil {
+	if err := router.Run(cfg.RESTPort); err != nil { // start the REST server
 		log.Fatalf("Failed to run REST server: %v", err)
 	}
 }
