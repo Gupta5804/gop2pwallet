@@ -5,7 +5,7 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
 #Copy all module files first to leverage Docker layer caching
-COPY go.mod go.sum ./
+COPY go.mod ./
 COPY services/user-service/go.mod services/user-service/go.sum ./services/user-service/
 COPY services/wallet-service/go.mod services/wallet-service/go.sum ./services/wallet-service/
 
@@ -21,7 +21,8 @@ WORKDIR /app
 COPY . .
 
 # build the service
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./services/wallet-service/cmd/api
+WORKDIR /app/services/wallet-service
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/api
 
 # Final, small image
 FROM alpine:latest

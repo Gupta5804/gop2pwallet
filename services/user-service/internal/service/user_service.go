@@ -259,6 +259,16 @@ func (s *userService) ProcessGoogleTokenLogin(idToken string) (string, error) {
 				return "", fmt.Errorf("failed to create user: %w", err)
 			}
 			user = createdUser
+			// call wallet service to create a new wallet for the user
+			_, err = s.walletServiceClient.CreateWallet(context.Background(), &walletPB.CreateWalletRequest{
+				UserId: createdUser.ID,
+			})
+			if err != nil {
+				// This is a critical issue. For now, we just log the error and return an error message to the user
+				log.Printf("Failed to create wallet for user %s: %v", createdUser.ID, err)
+				return "", fmt.Errorf("failed to create wallet for user: %w", err)
+				// in real app we might want to roll back the user creation
+			}
 		} else {
 			// if found by email, update the google ID
 			user.GoogleID = googleID

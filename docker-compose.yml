@@ -10,7 +10,8 @@ services: # define services(containers) to be run
     env_file:
       - ./services/user-service/.env 
     depends_on:
-      - db # ensure the db service is started before this one
+      db:
+        condition: service_healthy # ensure the db service is started before this one
     environment:
       - GIN_MODE=debug # set environment variable for Gin framework
   wallet-service:
@@ -23,9 +24,11 @@ services: # define services(containers) to be run
     env_file:
       - ./services/user-service/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - GIN_MODE=debug
+      
   frontend:
     build:
       context: ./services/frontend
@@ -50,6 +53,12 @@ services: # define services(containers) to be run
       - POSTGRES_USER=user # database username
       - POSTGRES_PASSWORD=password # database password
       - POSTGRES_DB=gop2pwallet # database name
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d gop2pwallet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      
 
 volumes:
   postgres_data: # define a named volume for PostgreSQL data persistence
