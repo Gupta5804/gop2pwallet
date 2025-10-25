@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.20.3
-// source: wallet.proto
+// source: proto/wallet.proto
 
-package proto
+package wallet
 
 import (
 	context "context"
@@ -237,5 +237,5 @@ var WalletService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "wallet.proto",
+	Metadata: "proto/wallet.proto",
 }

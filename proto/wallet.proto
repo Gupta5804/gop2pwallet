@@ -2,7 +2,7 @@ syntax = "proto3"; // wallet.proto
 
 package wallet;
 
-option go_package = "github.com/Gupta5804/gop2pwallet/proto";
+option go_package = "github.com/Gupta5804/gop2pwallet/proto/wallet";
 
 service WalletService {
     // Callet by user-service on registration
