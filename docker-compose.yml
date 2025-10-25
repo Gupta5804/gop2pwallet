@@ -28,7 +28,23 @@ services: # define services(containers) to be run
         condition: service_healthy
     environment:
       - GIN_MODE=debug
-      
+  transaction-service:
+    build:
+      context: .
+      dockerfile: ./services/transaction-service/Dockerfile
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./services/user-service/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      wallet-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - GIN_MODE=debug
   frontend:
     build:
       context: ./services/frontend
@@ -58,7 +74,23 @@ services: # define services(containers) to be run
       interval: 5s
       timeout: 5s
       retries: 5
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672" # for amqp (the protocol)
+      - "15672:15672" # for management web ui (http://localhost:15672/)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics","check_running"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
       
 
 volumes:
   postgres_data: # define a named volume for PostgreSQL data persistence
+  rabbitmq_data: # define a named volume for RabbitMQ data persistence
