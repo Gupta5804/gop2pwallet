@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+
 type TransactionService struct {
 	store     storage.TransactionStore
 	wallet    walletpb.WalletServiceClient
@@ -65,7 +66,7 @@ type PaymentRejectedMessage struct {
 // -- Public Methods -- //
 
 // SendMoney executes a p2p transfer
-func (s *TransactionService) SendMoney(ctx context.Context, senderID, recepientID uuid.UUID, amount int64) (*model.Transaction, error) {
+func (s *TransactionService) SendMoney(ctx context.Context, senderID, recipientID uuid.UUID, amount int64) (*model.Transaction, error) {
 	// 1. Call wallet service to perform the debit
 	debitReq := &walletpb.DebitWalletRequest{
 		UserId: senderID.String(),
@@ -78,15 +79,15 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recepientI
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.InvalidArgument && st.Message() == "insufficient balance" {
 			// 2a. Debit failed (insufficient funds)
-			return s.createAndPublishFailedTx(ctx, senderID, recepientID, amount, model.TypeSend, "Insufficient funds")
+			return s.createAndPublishFailedTx(ctx, senderID, recipientID, amount, model.TypeSend, "Insufficient funds")
 		}
 		// 2b. Other grpc or network error
-		return s.createAndPublishFailedTx(ctx, senderID, recepientID, amount, model.TypeSend, "Wallet service error")
+		return s.createAndPublishFailedTx(ctx, senderID, recipientID, amount, model.TypeSend, "Wallet service error")
 	}
 
 	// 3. Debit was successful, now credit the recepient
 	creditReq := &walletpb.CreditWalletRequest{
-		UserId: recepientID.String(),
+		UserId: recipientID.String(),
 		Amount: amount,
 	}
 
@@ -105,7 +106,7 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recepientI
 	// Create "completed" transaction record
 	tx := &model.Transaction{
 		SenderUserID:    senderID,
-		RecipientUserID: recepientID,
+		RecipientUserID: recipientID,
 		Amount:          amount,
 		Status:          model.StatusCompleted,
 		Type:            model.TypeSend,
@@ -119,14 +120,14 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recepientI
 	msg := PaymentSuccessMessage{
 		Type:          "payment_success",
 		SenderID:      senderID,
-		RecepientID:   recepientID,
+		RecipientID:   recipientID,
 		Amount:        amount,
 		TransactionID: createdTx.ID,
 	}
 
 	// we run this in a goroutine so we dont block the HTTP response
 	go func() {
-		if err := s.publisher.Publish(ctx, msg); err != nil {
+		if err := s.publisher.Publish(context.Background(),"notify.payment.success", msg); err != nil {
 			log.Printf("Failed to publish payment success message: %v", err)
 		}
 	}()
@@ -283,7 +284,7 @@ func (s *TransactionService) RejectRequest(ctx context.Context, rejecterID uuid.
 // GetPendingTransactions fetches all pending requests for a user.
 // This implements the logic for "/api/vs/transactions/pending"
 func (s *TransactionService) GetPendingTransactions(ctx context.Context, userID uuid.UUID) ([]*model.Transaction, error) {
-	return s.store.GetPendingTransactionsByRecipient(ctx, userID)
+	return s.store.GetPendingTransactionsByRecipientID(ctx, userID)
 }
 
 // GetTransactionHistory fetches a user's transaction history.

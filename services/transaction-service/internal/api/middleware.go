@@ -1,78 +1,69 @@
+// services/user-service/internal/api/handlers.go
+
 package api
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/Gupta5804/gop2pwallet/services/transaction-service/internal/config"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
-// UserIDKey is the key used to store the user ID in the request context.
-type contextKey string
-const UserIDKey contextKey = "userID"
+// AuthMiddleware is a Gin middleware for JWT authentication
+// It checks for the presence and validity of a JWT token in the Authorization header
+// If the token is valid, it extracts the user ID and sets it in the Gin context
+// If the token is missing or invalid, it responds with a 401 Unauthorized status
+// Authorization header comes from the client in the format: "Bearer <token>"
+// comes in every request that needs authentication and is validated here
+// this middleware is applied to routes that require authentication
 
-// AuthMiddleware creates a middleware for JWT authentication.
-func AuthMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// 1. Get the Authorization header
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				http.Error(w, "Authorization header required", http.StatusUnauthorized)
-				return
+func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 1. Get the token from the Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error":"Authorization header missing"})
+			return
+		}
+		// The header should be in the format "Bearer <token>"
+		parts := strings.Split(authHeader," ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+			return
+		}
+		tokenString := parts[1]
+
+		// 2. Parse and validate the token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Make sure that the token's signing method is what you expect
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method %v",token.Header["alg"])
 			}
-
-			// 2. Extract the token ("Bearer <token>")
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			if tokenString == authHeader {
-				http.Error(w, "Invalid token format", http.StatusUnauthorized)
-				return
-			}
-
-			// 3. Parse and validate the token
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				// We only use HMAC, so check the signing method
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, jwt.ErrSignatureInvalid
-				}
-				return []byte(cfg.JWTSecret), nil
-			})
-
-			if err != nil {
-				http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
-				return
-			}
-
-			// 4. Extract claims and user ID
-			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				userIDStr, ok := claims["user_id"].(string)
-				if !ok {
-					http.Error(w, "Invalid token claims: user_id missing or not a string", http.StatusUnauthorized)
-					return
-				}
-
-				userID, err := uuid.Parse(userIDStr)
-				if err != nil {
-					http.Error(w, "Invalid token claims: user_id is not a valid UUID", http.StatusUnauthorized)
-					return
-				}
-
-				// 5. Add user ID to the request context
-				ctx := context.WithValue(r.Context(), UserIDKey, userID)
-				next.ServeHTTP(w, r.WithContext(ctx))
-			} else {
-				http.Error(w, "Invalid token", http.StatusUnauthorized)
-			}
+			return []byte(cfg.JWTSecret), nil
 		})
+
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		// 3. If the token is valid, extract the user ID from the token claims
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			// "sub" is a standard claim for the subject (user ID in this case)
+			userID := claims["sub"].(string)
+			// Set the user ID in the Gin context for use in handlers
+			c.Set("userID", userID)
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			return
+		}
+
+		// 4. Call the next handler in the chain
+		c.Next()
 	}
 }
 
-// GetUserIDFromContext retrieves the user ID from the request context.
-// Our handlers will use this helper function.
-func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
-	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
-	return userID, ok
-}
+// Note: This code assumes that the JWT token contains a "sub" claim with the user ID

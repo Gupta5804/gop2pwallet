@@ -12,10 +12,10 @@ import (
 )
 
 type TransactionStore interface {
-	CreateTransactioin(ctx context.Context, tx *model.Transaction) (*model.Transaction, error)
+	CreateTransaction(ctx context.Context, tx *model.Transaction) (*model.Transaction, error)
 	GetTransactionByID(ctx context.Context, txID uuid.UUID) (*model.Transaction, error)
 	UpdateTransaction(ctx context.Context, tx *model.Transaction) error
-	GetPendingTransactionsByRecipientID(ctx context.Context, recepientID uuid.UUID) ([]*model.Transaction, error)
+	GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID) ([]*model.Transaction, error)
 	GetTransactionHistoryByUserID(ctx context.Context, userID uuid.UUID, limit int) ([]*model.Transaction, error)
 }
 
@@ -38,7 +38,7 @@ func NewPostgresStore(cfg *config.Config) (*PostgresStorage, error) {
 }
 
 // CreateTransaction creates a new transaction in the database
-func (s *PostgresStorage) CreateTransactioin(ctx context.Context, tx *model.Transaction) (*model.Transaction, error) {
+func (s *PostgresStorage) CreateTransaction(ctx context.Context, tx *model.Transaction) (*model.Transaction, error) {
 	if err := s.db.WithContext(ctx).Create(tx).Error; err != nil {
 		return nil, err
 	}
@@ -62,10 +62,10 @@ func (s *PostgresStorage) UpdateTransaction (ctx context.Context, tx *model.Tran
 
 // GetPendingTransactionsByRecepient fetches all "pending transactions" for a specific user
 // This is for the "view pending" endpoint
-func (s *PostgresStorage) GetPendingTransactionsByRecepient(ctx context.Context, recepientID uuid.UUID) ([]*model.Transaction, error){
+func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID) ([]*model.Transaction, error){
 	var transactions []*model.Transaction
 	if err := s.db.WithContext(ctx).
-		Where("recepient_user_id = ? AND status = ?", recepientID, model.StatusPending).
+		Where("recipient_user_id = ? AND status = ?", recipientID, model.StatusPending).
 		Order("created_at desc").
 		Find(&transactions).Error; err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func (s *PostgresStorage) GetTransactionHistoryByUserID (ctx context.Context, us
 	var transactions []*model.Transaction
 
 	query := s.db.WithContext(ctx).
-		Where("(sender_user_id = ? OR recepient_user_id = ?) AND status != ?", userID, userID, model.StatusPending).
+		Where("(sender_user_id = ? OR recipient_user_id = ?) AND status != ?", userID, userID, model.StatusPending).
 		Order("created_at desc")
 	// Apply limit if provided (limit > 0)
 	if limit > 0 {
