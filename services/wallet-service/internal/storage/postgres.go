@@ -15,8 +15,8 @@ import (
 type WalletStore interface {
 	CreateWallet(ctx context.Context, userID string) (*model.Wallet,error)
 	GetWalletByUserID(ctx context.Context, userID string) (*model.Wallet,error)
-	CreditWallet(ctx context.Context, userID string, amount float64) (*model.Wallet,error)
-	DebitWallet(ctx context.Context, userID string, amount float64) (*model.Wallet,error)
+	CreditWallet(ctx context.Context, userID string, amount int64) (*model.Wallet,error)
+	DebitWallet(ctx context.Context, userID string, amount int64) (*model.Wallet,error)
 }
 
 type PostgresStorage struct {
@@ -39,7 +39,7 @@ func NewPostgresStore(cfg *config.Config)(*PostgresStorage, error) {
 func (s *PostgresStorage) CreateWallet(ctx context.Context,userID string) (*model.Wallet, error) {
 	wallet := &model.Wallet{
 		UserID:    userID,
-		Balance:   500,
+		Balance:   50000,
 		Currency:  "INR",
 	}
 	if err := s.db.WithContext(ctx).Create(wallet).Error; err != nil {
@@ -58,7 +58,7 @@ func (s *PostgresStorage) GetWalletByUserID(ctx context.Context, userID string) 
 }
 
 // CreditWallet Atomically adds funds to a wallet
-func (s *PostgresStorage) CreditWallet(ctx context.Context, userID string, amount float64) (*model.Wallet, error) {
+func (s *PostgresStorage) CreditWallet(ctx context.Context, userID string, amount int64) (*model.Wallet, error) {
 	var wallet model.Wallet
 
 	// start a database transaction
@@ -85,7 +85,7 @@ func (s *PostgresStorage) CreditWallet(ctx context.Context, userID string, amoun
 }
 
 // DebitWallet atomically removes funds from a wallet
-func (s *PostgresStorage) DebitWallet(ctx context.Context, userID string, amount float64) (*model.Wallet, error) {
+func (s *PostgresStorage) DebitWallet(ctx context.Context, userID string, amount int64) (*model.Wallet, error) {
 	var wallet model.Wallet
 
 	// start a database connection

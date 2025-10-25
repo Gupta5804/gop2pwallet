@@ -30,25 +30,25 @@ message GetBalanceRequest {
 }
 
 message GetBalanceResponse {
-    double balance = 1;
+    int64 balance = 1;
     string currency = 2;
 }
 
 message CreditWalletRequest {
     string user_id = 1;
-    double amount = 2;
+    int64 amount = 2;
 }
 message CreditWalletResponse {
     bool success = 1;
-    double new_balance = 2;
+    int64 new_balance = 2;
 }
 
 message DebitWalletRequest {
     string user_id = 1;
-    double amount = 2;
+    int64 amount = 2;
 }
 message DebitWalletResponse {
     bool success = 1;
-    double new_balance = 2;
+    int64 new_balance = 2;
     string error = 3;
 }

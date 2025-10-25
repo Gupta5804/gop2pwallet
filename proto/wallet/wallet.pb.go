@@ -163,7 +163,7 @@ func (x *GetBalanceRequest) GetUserId() string {
 
 type GetBalanceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Balance       float64                `protobuf:"fixed64,1,opt,name=balance,proto3" json:"balance,omitempty"`
+	Balance       int64                  `protobuf:"varint,1,opt,name=balance,proto3" json:"balance,omitempty"`
 	Currency      string                 `protobuf:"bytes,2,opt,name=currency,proto3" json:"currency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -199,7 +199,7 @@ func (*GetBalanceResponse) Descriptor() ([]byte, []int) {
 	return file_wallet_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetBalanceResponse) GetBalance() float64 {
+func (x *GetBalanceResponse) GetBalance() int64 {
 	if x != nil {
 		return x.Balance
 	}
@@ -216,7 +216,7 @@ func (x *GetBalanceResponse) GetCurrency() string {
 type CreditWalletRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount        int64                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -258,7 +258,7 @@ func (x *CreditWalletRequest) GetUserId() string {
 	return ""
 }
 
-func (x *CreditWalletRequest) GetAmount() float64 {
+func (x *CreditWalletRequest) GetAmount() int64 {
 	if x != nil {
 		return x.Amount
 	}
@@ -268,7 +268,7 @@ func (x *CreditWalletRequest) GetAmount() float64 {
 type CreditWalletResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	NewBalance    float64                `protobuf:"fixed64,2,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
+	NewBalance    int64                  `protobuf:"varint,2,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -310,7 +310,7 @@ func (x *CreditWalletResponse) GetSuccess() bool {
 	return false
 }
 
-func (x *CreditWalletResponse) GetNewBalance() float64 {
+func (x *CreditWalletResponse) GetNewBalance() int64 {
 	if x != nil {
 		return x.NewBalance
 	}
@@ -320,7 +320,7 @@ func (x *CreditWalletResponse) GetNewBalance() float64 {
 type DebitWalletRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount        int64                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -362,7 +362,7 @@ func (x *DebitWalletRequest) GetUserId() string {
 	return ""
 }
 
-func (x *DebitWalletRequest) GetAmount() float64 {
+func (x *DebitWalletRequest) GetAmount() int64 {
 	if x != nil {
 		return x.Amount
 	}
@@ -372,7 +372,7 @@ func (x *DebitWalletRequest) GetAmount() float64 {
 type DebitWalletResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	NewBalance    float64                `protobuf:"fixed64,2,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
+	NewBalance    int64                  `protobuf:"varint,2,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
 	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -415,7 +415,7 @@ func (x *DebitWalletResponse) GetSuccess() bool {
 	return false
 }
 
-func (x *DebitWalletResponse) GetNewBalance() float64 {
+func (x *DebitWalletResponse) GetNewBalance() int64 {
 	if x != nil {
 		return x.NewBalance
 	}
@@ -442,21 +442,21 @@ const file_wallet_proto_rawDesc = "" +
 	"\x11GetBalanceRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"J\n" +
 	"\x12GetBalanceResponse\x12\x18\n" +
-	"\abalance\x18\x01 \x01(\x01R\abalance\x12\x1a\n" +
+	"\abalance\x18\x01 \x01(\x03R\abalance\x12\x1a\n" +
 	"\bcurrency\x18\x02 \x01(\tR\bcurrency\"F\n" +
 	"\x13CreditWalletRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x01R\x06amount\"Q\n" +
+	"\x06amount\x18\x02 \x01(\x03R\x06amount\"Q\n" +
 	"\x14CreditWalletResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1f\n" +
-	"\vnew_balance\x18\x02 \x01(\x01R\n" +
+	"\vnew_balance\x18\x02 \x01(\x03R\n" +
 	"newBalance\"E\n" +
 	"\x12DebitWalletRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x01R\x06amount\"f\n" +
+	"\x06amount\x18\x02 \x01(\x03R\x06amount\"f\n" +
 	"\x13DebitWalletResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1f\n" +
-	"\vnew_balance\x18\x02 \x01(\x01R\n" +
+	"\vnew_balance\x18\x02 \x01(\x03R\n" +
 	"newBalance\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error2\xb2\x02\n" +
 	"\rWalletService\x12I\n" +
