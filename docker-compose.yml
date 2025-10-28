@@ -22,7 +22,7 @@ services: # define services(containers) to be run
       - "8081:8081"
       - "50052:50052"
     env_file:
-      - ./services/user-service/.env
+      - ./services/wallet-service/.env
     depends_on:
       db:
         condition: service_healthy
@@ -35,12 +35,25 @@ services: # define services(containers) to be run
     ports:
       - "8082:8082"
     env_file:
-      - ./services/user-service/.env
+      - ./services/transaction-service/.env
     depends_on:
       db:
         condition: service_healthy
       wallet-service:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - GIN_MODE=debug
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./services/notification-service/Dockerfile
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./services/notification-service/.env
+    depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
@@ -58,7 +71,9 @@ services: # define services(containers) to be run
       - /app/node_modules # avoid overwriting node_modules in the container
     depends_on:
       - user-service # ensure the user-service is started before this one
-      
+      - wallet-service
+      - transaction-service
+      - notification-service
   db:
     image: postgres:14-alpine # use the official PostgreSQL image
     ports: # map the database port

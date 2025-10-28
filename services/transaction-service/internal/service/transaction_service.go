@@ -316,7 +316,7 @@ func (s *TransactionService) createAndPublishFailedTx(ctx context.Context, sende
 	// 2. Publish failure message
 	go s.publishFailedTx(ctx, senderID, recipientID, amount, txType, reason)
 
-	return createdTx, fmt.Errorf(reason)
+	return createdTx, fmt.Errorf("%s", reason)
 }
 
 // publishFailedTx is a helper to run publishing in a goroutine.

@@ -8,6 +8,7 @@ COPY go.mod ./
 COPY services/user-service/go.mod services/user-service/go.sum ./services/user-service/
 COPY services/wallet-service/go.mod services/wallet-service/go.sum ./services/wallet-service/
 COPY services/transaction-service/go.mod services/transaction-service/go.sum ./services/transaction-service/ 
+COPY services/notification-service/go.mod services/notification-service/go.sum ./services/notification-service/
 # copy proto files
 COPY proto ./proto
 WORKDIR /app/services/user-service
