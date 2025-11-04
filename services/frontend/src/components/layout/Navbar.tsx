@@ -10,16 +10,19 @@ import {
     Avatar,
     Portal,
     MenuItemGroup,
-    Link as ChakraLink,
+    HStack,
 } from '@chakra-ui/react';
-import { Link as ReactRouterLink,useNavigate } from 'react-router-dom';
+import { Link ,useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import  UserSearch  from '@/components/ui/UserSearch';
-
+import { ColorModeButton } from '@/components/ui/color-mode';
+import { User } from '@/services/api';
 export default function NavBar() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-
+    const handleUserNavigation = (selectedUser: User) =>{
+      navigate(`/users/${selectedUser.username}`);
+    };
     
     const handleMenuSelect = (details: {value: string}) => {
       switch(details.value) {
@@ -34,17 +37,17 @@ export default function NavBar() {
     };
 
     return (
-        <Box bg="teal.400" p={4} color="white" as="nav" boxShadow="md" zIndex={10}>
-            <Flex align="center">
-                <Heading as="h2" size="md" >
-                    <ChakraLink as={ReactRouterLink} to="/" _hover={{textDecoration: "none"}}>
-
+        <Box bg="teal.400" p={4} color="white" as="nav" boxShadow="md" borderBottomWidth="1px" zIndex={10}>
+            <Flex align="center" maxW="container.xl" mx="auto">
+                <Heading as={Link} to="/" size="md" >
                         GoPay
-                    </ChakraLink>
                 </Heading>
                 <Spacer />
+                <HStack gap={4}>
+                  
+                </HStack>
                 <Box w={{ base: '150px', sm: '250px', md: '400px' }}>
-                    <UserSearch/>
+                    <UserSearch onUserSelected={handleUserNavigation} zIndex="docked"/>
                 </Box>
                 <Spacer/>
                 {user && (

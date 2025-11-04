@@ -80,8 +80,12 @@ func (s *PostgresStorage) GetTransactionHistoryByUserID (ctx context.Context, us
 	var transactions []*model.Transaction
 
 	query := s.db.WithContext(ctx).
-		Where("(sender_user_id = ? OR recipient_user_id = ?) AND status != ?", userID, userID, model.StatusPending).
-		Order("created_at desc")
+		Table("transactions AS t").
+		Select("t.*, su.username as sender_username, ru.username as recipient_username").
+		Joins("LEFT JOIN users AS su ON su.id = t.sender_user_id").
+		Joins("LEFT JOIN users AS ru ON ru.id = t.recipient_user_id").
+		Where("(t.sender_user_id = ? OR t.recipient_user_id = ?) AND t.status != ?", userID, userID, model.StatusPending).
+		Order("t.created_at desc")
 	// Apply limit if provided (limit > 0)
 	if limit > 0 {
 		query = query.Limit(limit)
