@@ -15,7 +15,7 @@ type TransactionStore interface {
 	CreateTransaction(ctx context.Context, tx *model.Transaction) (*model.Transaction, error)
 	GetTransactionByID(ctx context.Context, txID uuid.UUID) (*model.Transaction, error)
 	UpdateTransaction(ctx context.Context, tx *model.Transaction) error
-	GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID) ([]*model.Transaction, error)
+	GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit int) ([]*model.Transaction, error)
 	GetTransactionHistoryByUserID(ctx context.Context, userID uuid.UUID, limit int) ([]*model.Transaction, error)
 }
 
@@ -62,14 +62,20 @@ func (s *PostgresStorage) UpdateTransaction (ctx context.Context, tx *model.Tran
 
 // GetPendingTransactionsByRecepient fetches all "pending transactions" for a specific user
 // This is for the "view pending" endpoint
-func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID) ([]*model.Transaction, error){
+func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit int) ([]*model.Transaction, error){
 	var transactions []*model.Transaction
-	if err := s.db.WithContext(ctx).
-		Where("recipient_user_id = ? AND status = ?", recipientID, model.StatusPending).
-		Order("created_at desc").
-		Find(&transactions).Error; err != nil {
-			return nil, err
-		}
+	query := s.db.WithContext(ctx).
+		Table("transactions AS t").
+		Select("t.*, su.username as sender_username").
+		Joins("LEFT JOIN users AS su ON su.id = t.sender_user_id").
+		Where("t.recipient_user_id = ? AND t.status = ?", recipientID, model.StatusPending).
+		Order("t.created_at desc")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if err := query.Find(&transactions).Error; err != nil {
+		return nil, err
+	}
 	return transactions, nil
 }
 

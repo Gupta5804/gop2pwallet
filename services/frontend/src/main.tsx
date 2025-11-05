@@ -8,7 +8,7 @@ import './index.css'
 import App from './App.tsx'
 const googleClientID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 ReactDom.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <GoogleOAuthProvider clientId={googleClientID}> 
     <BrowserRouter>
       <Provider>
@@ -18,5 +18,5 @@ ReactDom.createRoot(document.getElementById('root')!).render(
       </Provider>
     </BrowserRouter>
     </GoogleOAuthProvider>
-  </React.StrictMode>,
+  //</React.StrictMode>,
 )

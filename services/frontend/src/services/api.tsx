@@ -72,6 +72,7 @@ apiClient.interceptors.request.use((config) => {
 export const api = {
     // --- User Service ---
     login: (data: any) => apiClient.post<AuthResponse>('/auth/login', data),
+    loginWithGoogle: (credential: string) => apiClient.post<AuthResponse>('/auth/google', {GoogleToken: credential}),
     signup: (data: any) => apiClient.post<AuthResponse>('/auth/register', data),
     getMe: () => apiClient.get<User>('/auth/me'),
     searchUsers: (query: string) => apiClient.get<User[]>(`/users/search?q=${query}`),

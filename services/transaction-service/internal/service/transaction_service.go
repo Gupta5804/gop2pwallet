@@ -37,6 +37,8 @@ type PaymentSuccessMessage struct {
 	RecipientID   uuid.UUID `json:"recipient_id"`
 	Amount        int64     `json:"amount"`
 	TransactionID uuid.UUID `json:"transaction_id"`
+	SenderUsername string `json:"sender_username,omitempty"`
+	RecipientUsername string `json:"recipient_username,omitempty"`
 }
 
 type PaymentFailedMessage struct {
@@ -45,6 +47,8 @@ type PaymentFailedMessage struct {
 	RecipientID uuid.UUID `json:"recipient_id"`
 	Amount      int64     `json:"amount"`
 	Reason      string    `json:"reason"`
+	SenderUsername string `json:"sender_username,omitempty"`
+	RecipientUsername string `json:"recipient_username,omitempty"`
 }
 
 type PaymentRequestMessage struct {
@@ -53,6 +57,8 @@ type PaymentRequestMessage struct {
 	RequesteeID   uuid.UUID `json:"requestee_id"`
 	Amount        int64     `json:"amount"`
 	TransactionID uuid.UUID `json:"transaction_id"`
+	RequesterUsername string `json:"requester_username,omitempty"`
+	RequesteeUsername string `json:"requestee_username,omitempty"`
 }
 
 type PaymentRejectedMessage struct {
@@ -61,6 +67,8 @@ type PaymentRejectedMessage struct {
 	RejecterID    uuid.UUID `json:"rejecter_id"`
 	Amount        int64     `json:"amount"`
 	TransactionID uuid.UUID `json:"transaction_id"`
+	RequesterUsername string `json:"requester_username,omitempty"`
+	RejecterUsername string `json:"rejecter_username,omitempty"`
 }
 
 // -- Public Methods -- //
@@ -115,14 +123,20 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recipientI
 	if err != nil {
 		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
 	}
-
+	txWithNames, err := s.store.GetTransactionByID(ctx, createdTx.ID)
+	if err != nil {
+		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
+		txWithNames = createdTx
+	}
 	// 5. Publish success message to RabbitMQ
 	msg := PaymentSuccessMessage{
 		Type:          "payment_success",
-		SenderID:      senderID,
-		RecipientID:   recipientID,
-		Amount:        amount,
-		TransactionID: createdTx.ID,
+		SenderID:      txWithNames.SenderUserID,
+		RecipientID:   txWithNames.RecipientUserID,
+		Amount:        txWithNames.Amount,
+		TransactionID: txWithNames.ID,
+		SenderUsername: txWithNames.SenderUsername,
+		RecipientUsername: txWithNames.RecipientUsername,
 	}
 
 	// we run this in a goroutine so we dont block the HTTP response
@@ -150,14 +164,21 @@ func (s *TransactionService) RequestMoney(ctx context.Context, requesterID, requ
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pending transaction: %w", err)
 	}
+	txWithNames, err := s.store.GetTransactionByID(ctx, createdTx.ID)
+	if err != nil {
+		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
+		txWithNames = createdTx
+	}
 
 	// 2. Publish request message to RabbitMQ
 	msg := PaymentRequestMessage{
 		Type:          "payment_request",
-		RequesterID:   requesterID,
-		RequesteeID:   requesteeID,
-		Amount:        amount,
-		TransactionID: createdTx.ID,
+		RequesterID:   txWithNames.SenderUserID,
+		RequesteeID:   txWithNames.RecipientUserID,
+		Amount:        txWithNames.Amount,
+		TransactionID: txWithNames.ID,
+		RequesterUsername: txWithNames.SenderUsername,
+		RequesteeUsername: txWithNames.RecipientUsername,
 	}
 	go func() {
 		if err := s.publisher.Publish(context.Background(), "notify.payment.request", msg); err != nil {
@@ -223,7 +244,7 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 	if err := s.store.UpdateTransaction(ctx, tx); err != nil {
 		log.Printf("CRITICAL ERROR: Approval transfer complete but failed to update tx record: %v", err)
 	}
-
+	
 	// 5. Publish success message
 	msg := PaymentSuccessMessage{
 		Type:          "payment_success",
@@ -231,6 +252,8 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 		RecipientID:   recipientID, // The original requester
 		Amount:        amount,
 		TransactionID: tx.ID,
+		SenderUsername: tx.RecipientUsername,
+		RecipientUsername: tx.SenderUsername,
 	}
 	go func() {
 		if err := s.publisher.Publish(context.Background(), "notify.payment.success", msg); err != nil {
@@ -271,6 +294,8 @@ func (s *TransactionService) RejectRequest(ctx context.Context, rejecterID uuid.
 		RejecterID:    tx.RecipientUserID, // User who rejected
 		Amount:        tx.Amount,
 		TransactionID: tx.ID,
+		RequesterUsername: tx.SenderUsername,
+		RejecterUsername: tx.RecipientUsername,
 	}
 	go func() {
 		if err := s.publisher.Publish(context.Background(), "notify.payment.rejected", msg); err != nil {
@@ -283,8 +308,8 @@ func (s *TransactionService) RejectRequest(ctx context.Context, rejecterID uuid.
 
 // GetPendingTransactions fetches all pending requests for a user.
 // This implements the logic for "/api/vs/transactions/pending"
-func (s *TransactionService) GetPendingTransactions(ctx context.Context, userID uuid.UUID) ([]*model.Transaction, error) {
-	return s.store.GetPendingTransactionsByRecipientID(ctx, userID)
+func (s *TransactionService) GetPendingTransactions(ctx context.Context, userID uuid.UUID, limit int) ([]*model.Transaction, error) {
+	return s.store.GetPendingTransactionsByRecipientID(ctx, userID, limit)
 }
 
 // GetTransactionHistory fetches a user's transaction history.
@@ -327,6 +352,7 @@ func (s *TransactionService) publishFailedTx(ctx context.Context, senderID, reci
 		RecipientID: recipientID,
 		Amount:      amount,
 		Reason:      reason,
+		
 	}
 	if err := s.publisher.Publish(context.Background(), "notify.payment.failed", msg); err != nil {
 		log.Printf("Failed to publish failure message: %v", err)

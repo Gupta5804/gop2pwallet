@@ -175,9 +175,11 @@ func (h *TransactionHandlers) HandleGetPending(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-
+	// get limit query parameter
+	limitStr := c.Query("limit")
+	limit,_ := strconv.Atoi(limitStr) // Atoi returns 0 on error, which is fine
 	// 2. Call the service
-	transactions, err := h.service.GetPendingTransactions(c.Request.Context(), userID)
+	transactions, err := h.service.GetPendingTransactions(c.Request.Context(), userID,limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -218,17 +220,17 @@ func (h *TransactionHandlers) HandleGetHistory(c *gin.Context) {
 func (h *TransactionHandlers) getUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	userIDVal, exists := c.Get("userID")
 	if !exists {
-		return uuid.Nil, fmt.Errorf("User ID not found in context")
+		return uuid.Nil, fmt.Errorf("user ID not found in context")
 	}
 
 	userIDStr, ok := userIDVal.(string)
 	if !ok {
-		return uuid.Nil, fmt.Errorf("User ID in context is not a string")
+		return uuid.Nil, fmt.Errorf("user ID in context is not a string")
 	}
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("Invalid user ID format in context")
+		return uuid.Nil, fmt.Errorf("invalid user ID format in context")
 	}
 
 	return userID, nil

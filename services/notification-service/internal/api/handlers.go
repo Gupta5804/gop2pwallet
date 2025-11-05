@@ -83,7 +83,7 @@ func (h *WebSocketHandler) validateToken(tokenString string) (uuid.UUID, error) 
 		return userID, err
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userIDStr, ok := claims["user_id"].(string)
+		userIDStr, ok := claims["sub"].(string)
 		if !ok {
 			return userID, jwt.ErrInvalidKey
 		}

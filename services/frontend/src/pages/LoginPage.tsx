@@ -22,7 +22,6 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { toaster } from "@/components/ui/toaster"
 import { useNavigate, Link as ReactRouterLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import apiClient from '@/services/api';
 
 export default function LoginPage() {
     
@@ -32,7 +31,7 @@ export default function LoginPage() {
 
     const navigate = useNavigate();
     
-    const { login, isAuthenticated } = useAuth();
+    const { login, googleLogin, isAuthenticated } = useAuth();
 
     useEffect(() => {
         if(isAuthenticated){
@@ -45,53 +44,29 @@ export default function LoginPage() {
         setIsSubmitting(true);
         try {
             //1. Make the API call directly from the login page
-            const response = await apiClient.post('/auth/login',{email, password});
+            await login({email, password});
             //2. Extract the token from the successful response
-            const { token } = response.data;
-
-            if(token) {
-                // 3. Pass the token to the AuthContext
-                login(token);
-                //4. Navigate to the main dashboard page
-                navigate('/',{replace: true}) 
-            } else {
-                throw new Error("Login Successful, but no token provided by the server");
-            }
+            navigate('/', { replace: true });
         } catch (error) {
-            toaster.create({
-                title: 'Login Failed',
-                description: 'Incorrect email or password. Please try again',
-                type: 'error',
-                duration: 5000,
-            });
-            console.error("Login Error:",error);
+            console.error("Login Failed",error);
         } finally {
             setIsSubmitting(false);
         }
     };
-    const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-        
-        const googleToken = credentialResponse.credential;
-
+    const handleGoogleSuccess = async (response: CredentialResponse) => {
         try {
-            // send the google token to the backend
-            const response = await apiClient.post('/auth/google', {googleToken});
-            const { token } = response.data;
-
-            if (token) {
-                login(token);
+            if (response.credential) {
+                await googleLogin(response.credential);
                 navigate('/', { replace: true });
             } else {
-                throw new Error("Login Successful, but no token provided by the server");
+                toaster.error({
+                    title: 'Google Login Failed',
+                    description: 'No credential received from Google. Please try again.',
+                    duration: 5000,
+                });
             }
         } catch (error) {
-            toaster.create({
-                title: 'Google Login Failed',
-                description: 'An error occurred while logging in with Google. Please try again',
-                type: 'error',
-                duration: 5000,
-            });
-            console.error("Google login error:",error);
+            console.error("Google login failed in component",error);
         }
     };
     

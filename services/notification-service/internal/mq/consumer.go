@@ -13,8 +13,8 @@ import (
 
 const (
 	ExchangeName = "transactions_exchange"
-	QueueName = "notifications_queue"
-	RoutingKey = "notify.payment.*"
+	QueueName    = "notifications_queue"
+	RoutingKey   = "notify.payment.*"
 )
 
 // MessagePayload is a generic struct to unmarshal the "type" field
@@ -23,48 +23,56 @@ type MessagePayload struct {
 	Type string `json:"type"`
 }
 
-//Define the message structs we expect from transaction-service
+// Define the message structs we expect from transaction-service
 // These must match the structs in transaction-service/internal/service
 type PaymentSuccessMessage struct {
-	Type          string    `json:"type"`
-	SenderID      uuid.UUID `json:"sender_id"`
-	RecipientID   uuid.UUID `json:"recipient_id"`
-	Amount        int64     `json:"amount"`
-	TransactionID uuid.UUID `json:"transaction_id"`
+	Type              string    `json:"type"`
+	SenderID          uuid.UUID `json:"sender_id"`
+	RecipientID       uuid.UUID `json:"recipient_id"`
+	Amount            int64     `json:"amount"`
+	TransactionID     uuid.UUID `json:"transaction_id"`
+	SenderUsername    string    `json:"sender_username,omitempty"`
+	RecipientUsername string    `json:"recipient_username,omitempty"`
 }
 
 type PaymentFailedMessage struct {
-	Type        string    `json:"type"`
-	SenderID    uuid.UUID `json:"sender_id"`
-	RecipientID uuid.UUID `json:"recipient_id"`
-	Amount      int64     `json:"amount"`
-	Reason      string    `json:"reason"`
+	Type              string    `json:"type"`
+	SenderID          uuid.UUID `json:"sender_id"`
+	RecipientID       uuid.UUID `json:"recipient_id"`
+	Amount            int64     `json:"amount"`
+	Reason            string    `json:"reason"`
+	SenderUsername    string    `json:"sender_username,omitempty"`
+	RecipientUsername string    `json:"recipient_username,omitempty"`
 }
 
 type PaymentRequestMessage struct {
-	Type        string    `json:"type"`
-	RequesterID uuid.UUID `json:"requester_id"`
-	RequesteeID uuid.UUID `json:"requestee_id"`
-	Amount      int64     `json:"amount"`
-	TransactionID uuid.UUID `json:"transaction_id"`
+	Type              string    `json:"type"`
+	RequesterID       uuid.UUID `json:"requester_id"`
+	RequesteeID       uuid.UUID `json:"requestee_id"`
+	Amount            int64     `json:"amount"`
+	TransactionID     uuid.UUID `json:"transaction_id"`
+	RequesterUsername string    `json:"requester_username,omitempty"`
+	RequesteeUsername string    `json:"requestee_username,omitempty"`
 }
 
 type PaymentRejectedMessage struct {
-	Type          string    `json:"type"`
-	RequesterID   uuid.UUID `json:"requester_id"`
-	RejecterID    uuid.UUID `json:"rejecter_id"`
-	Amount        int64     `json:"amount"`
-	TransactionID uuid.UUID `json:"transaction_id"`
+	Type              string    `json:"type"`
+	RequesterID       uuid.UUID `json:"requester_id"`
+	RejecterID        uuid.UUID `json:"rejecter_id"`
+	Amount            int64     `json:"amount"`
+	TransactionID     uuid.UUID `json:"transaction_id"`
+	RequesterUsername string    `json:"requester_username,omitempty"`
+	RejecterUsername  string    `json:"rejecter_username,omitempty"`
 }
 
 type NotificationConsumer struct {
-	hub *websocket.Hub
+	hub  *websocket.Hub
 	conn *amqp.Connection
-	ch *amqp.Channel
+	ch   *amqp.Channel
 }
 
 // NewNotificationConsumer creates a new consumer
-func NewNotificationConsumer(cfg *config.Config, hub *websocket.Hub) (*NotificationConsumer, error){
+func NewNotificationConsumer(cfg *config.Config, hub *websocket.Hub) (*NotificationConsumer, error) {
 	conn, err := amqp.Dial(cfg.RabbitMQURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
@@ -89,9 +97,9 @@ func NewNotificationConsumer(cfg *config.Config, hub *websocket.Hub) (*Notificat
 		return nil, fmt.Errorf("failed to declare an exchange: %w", err)
 	}
 	return &NotificationConsumer{
-		hub: hub,
+		hub:  hub,
 		conn: conn,
-		ch: ch,
+		ch:   ch,
 	}, nil
 }
 
@@ -110,7 +118,7 @@ func (c *NotificationConsumer) Start() {
 		log.Fatalf("Failed to declare a queue: %v", err)
 	}
 
-	// Bind the queue to the exchange 
+	// Bind the queue to the exchange
 	err = c.ch.QueueBind(
 		q.Name,
 		RoutingKey,
@@ -155,6 +163,7 @@ func (c *NotificationConsumer) handleMessage(body []byte) {
 		log.Printf("Failed to unmarshal message type: %v", err)
 		return
 	}
+	log.Printf("Received message type: %s", payload.Type)
 
 	// Process the message based on its type
 	switch payload.Type {
@@ -164,14 +173,14 @@ func (c *NotificationConsumer) handleMessage(body []byte) {
 			log.Printf("Error unmarshaling %s: %v", payload.Type, err)
 			return
 		}
-		
+
 		// Notify the recipient
-		recipientMsg := fmt.Sprintf("You received %d paise.", msg.Amount)
-		c.hub.SendToUser(msg.RecipientID, []byte(recipientMsg))
+		//recipientMsg := fmt.Sprintf("You received %d paise.", msg.Amount)
+		c.hub.SendToUser(msg.RecipientID, body)
 
 		// Notify the sender
-		senderMsg := fmt.Sprintf("Your payment of %d paise was successful.", msg.Amount)
-		c.hub.SendToUser(msg.SenderID, []byte(senderMsg))
+		//senderMsg := fmt.Sprintf("Your payment of %d paise was successful.", msg.Amount)
+		c.hub.SendToUser(msg.SenderID, body)
 
 	case "payment_failed":
 		var msg PaymentFailedMessage
@@ -179,8 +188,8 @@ func (c *NotificationConsumer) handleMessage(body []byte) {
 			log.Printf("Error unmarshaling %s: %v", payload.Type, err)
 			return
 		}
-		failMsg := fmt.Sprintf("Your payment failed: %s", msg.Reason)
-		c.hub.SendToUser(msg.SenderID, []byte(failMsg))
+		//failMsg := fmt.Sprintf("Your payment failed: %s", msg.Reason)
+		c.hub.SendToUser(msg.SenderID, body)
 
 	case "payment_request":
 		var msg PaymentRequestMessage
@@ -189,22 +198,23 @@ func (c *NotificationConsumer) handleMessage(body []byte) {
 			return
 		}
 		// We can improve this later by fetching the user's name
-		requestMsg := fmt.Sprintf("You have a new payment request of %d paise from user %s.", msg.Amount, msg.RequesterID.String())
-		c.hub.SendToUser(msg.RequesteeID, []byte(requestMsg))
-	
+		//requestMsg := fmt.Sprintf("You have a new payment request of %d paise from user %s.", msg.Amount, msg.RequesterID.String())
+		c.hub.SendToUser(msg.RequesteeID, body)
+
 	case "payment_rejected":
 		var msg PaymentRejectedMessage
 		if err := json.Unmarshal(body, &msg); err != nil {
 			log.Printf("Error unmarshaling %s: %v", payload.Type, err)
 			return
 		}
-		rejectMsg := fmt.Sprintf("Your payment request to user %s was rejected.", msg.RejecterID.String())
-		c.hub.SendToUser(msg.RequesterID, []byte(rejectMsg))
+		//rejectMsg := fmt.Sprintf("Your payment request to user %s was rejected.", msg.RejecterID.String())
+		c.hub.SendToUser(msg.RequesterID, body)
 
 	default:
 		log.Printf("Unknown message type: %s", payload.Type)
 	}
 }
+
 // Close gracefully shuts down the connection.
 func (c *NotificationConsumer) Close() {
 	if c.ch != nil {

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import apiClient, { BalanceResponse, Transaction, api } from "@/services/api";
+import { BalanceResponse, Transaction, api } from "@/services/api";
 import { toaster } from "@/components/ui/toaster";
 import { 
     Heading,
@@ -11,11 +11,14 @@ import {
     Separator,
     HStack,
     Button,
+    Badge,
+    Tabs,
 } from "@chakra-ui/react";
 import { useAuth } from "@/contexts/AuthContext";
 import TransactionList from "@/components/transactions/TransactionList";
 import { sendMoneyDialog } from "@/components/transactions/SendMoneyDialog";
 import { requestMoneyDialog } from "@/components/transactions/RequestMoneyDialog";
+import PendingRequestList from "@/components/transactions/PendingRequestList";
 export default function DashboardPage() {
     // --- State Variables ---//
     const [balance, setBalance] = useState<BalanceResponse | null>(null);
@@ -28,8 +31,12 @@ export default function DashboardPage() {
     const [txLoading, setTxLoading] = useState(true);
     const [txError, setTxError] = useState<string | null>(null);
 
+    // state for pending requests
+    const [pendingRequests, setPendingRequests] = useState<Transaction[]>([]);
+    const [pendingLoading, setPendingLoading] = useState(true);
+    const [pendingError, setPendingError] = useState<string | null>(null);
     // Get User 
-    const { user } = useAuth(); // to get the user from the context
+    const { user, subscribeToRefresh, unsubscribeFromRefresh } = useAuth(); // to get the user from the context
     const fetchBalance = useCallback(async () => {
         try {
             setBalanceLoading(true);
@@ -65,12 +72,33 @@ export default function DashboardPage() {
             setTxLoading(false);
         }
     },[]);
-    // Data fetching hook
-    useEffect(() => {
+    const fetchPendingRequests = useCallback(async () => {
+        try {
+            setPendingLoading(true);
+            setPendingError(null);
+            const response = await api.getPendingTransactions(5);
+            setPendingRequests(response.data);
+        } catch(err) {
+            const errorMessage = "Failed to fetch pending requests.";
+            setPendingError(errorMessage);
+            toaster.error({ title: "Error", description: errorMessage });
+        } finally {
+            setPendingLoading(false);
+        }
+    },[]);
+    const refreshAllData = useCallback(() => {
         fetchBalance();
         fetchTransactions();
-    }, [fetchBalance, fetchTransactions]);
-
+        fetchPendingRequests();
+    },[fetchBalance, fetchTransactions, fetchPendingRequests]);
+    // Data fetching hook
+    useEffect(() => {
+        refreshAllData();
+    }, [refreshAllData]);
+    useEffect(() => {
+        subscribeToRefresh(refreshAllData);
+        return () => unsubscribeFromRefresh(refreshAllData);
+    },[refreshAllData, subscribeToRefresh, unsubscribeFromRefresh]);
     const handleTransactionSuccess = useCallback(()=>{
         fetchBalance();
         fetchTransactions();
@@ -124,6 +152,17 @@ export default function DashboardPage() {
             />
         );
     };
+    const renderPendingRequests = () => {
+        if (pendingLoading) return <Spinner />;
+        if (pendingError) return <Text color="red.500">{pendingError}</Text>;
+        return (
+            <PendingRequestList
+                requests={pendingRequests}
+                title="Incoming Requests"
+                onAction={refreshAllData}
+            />
+        );
+    };
     return (
         <VStack p={4} align="stretch" gap={6}>
 
@@ -140,7 +179,7 @@ export default function DashboardPage() {
                         size="lg"
                         onClick={()=>{
                             sendMoneyDialog.open("send-money", {
-                                onTransactionSuccess: handleTransactionSuccess,
+                                onTransactionSuccess: refreshAllData,
                             });
                         }}
                     >
@@ -151,7 +190,7 @@ export default function DashboardPage() {
                         size="lg"
                         onClick={() => {
                             requestMoneyDialog.open("request-money", {
-                                onRequestSuccess: handleRequestSuccess,
+                                onRequestSuccess: refreshAllData,
                             });
                         }}
                     >
@@ -166,8 +205,27 @@ export default function DashboardPage() {
 
             <Separator />
             <Box>
-                {renderTransactions()}
+                <Tabs.Root defaultValue="activity" fitted>
+                    <Tabs.List>
+                        <Tabs.Trigger value="activity">Recent Activity</Tabs.Trigger>
+                        <Tabs.Trigger value="pending">
+                            Pending Requests
+                            {pendingRequests.length > 0 && (
+                                <Badge colorPalette="red">
+                                    {pendingRequests.length}
+                                </Badge>
+                            )}
+                        </Tabs.Trigger>
+                    </Tabs.List>
+                    <Tabs.Content value="activity">
+                        {renderTransactions()}
+                    </Tabs.Content>
+                    <Tabs.Content value="pending">
+                        {renderPendingRequests()}
+                    </Tabs.Content>
+                </Tabs.Root>
             </Box>
+            
             <sendMoneyDialog.Viewport/>
             <requestMoneyDialog.Viewport/>
         </VStack>
