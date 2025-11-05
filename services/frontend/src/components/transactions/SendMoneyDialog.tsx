@@ -53,10 +53,10 @@ export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
                 recipient_id: selectedUser.id,
                 amount: amountInPaise,
             });
-            toaster.success({
-                title: "Success",
-                description: `Sent ${amountFloat.toFixed(2)} to ${selectedUser.username}.`,
-            });
+            // toaster.success({
+            //     title: "Success",
+            //     description: `Sent ${amountFloat.toFixed(2)} to ${selectedUser.username}.`,
+            // });
             onTransactionSuccess();
             onOpenChange?.({ open: false}); // close the dialog
 

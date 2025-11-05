@@ -85,12 +85,21 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recipientI
 	if err != nil {
 		// handle specific grpc errors
 		st, ok := status.FromError(err)
+		failReason := "Wallet service error"
 		if ok && st.Code() == codes.InvalidArgument && st.Message() == "insufficient balance" {
 			// 2a. Debit failed (insufficient funds)
-			return s.createAndPublishFailedTx(ctx, senderID, recipientID, amount, model.TypeSend, "Insufficient funds")
+			failReason = "Insufficient funds"
 		}
 		// 2b. Other grpc or network error
-		return s.createAndPublishFailedTx(ctx, senderID, recipientID, amount, model.TypeSend, "Wallet service error")
+		tx := &model.Transaction{
+			SenderUserID:    senderID,
+			RecipientUserID: recipientID,
+			Amount:          amount,
+			Status:          model.StatusFailed,
+			Type:            model.TypeSend,
+			FailureReason:   &failReason,
+		}
+		return s.createAndPublishFailedTx(ctx, tx, failReason)
 	}
 
 	// 3. Debit was successful, now credit the recepient
@@ -107,7 +116,31 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recipientI
 		// For now, we'll log the failure and notify.
 		// A more robust system would trigger a "reversal" on the sender's debit.
 		log.Printf("CRITICAL ERROR: Debit succeeded but Credit failed: %v", err)
-		return s.createAndPublishFailedTx(ctx, senderID, recipientID, amount, model.TypeSend, "Credit operation failed")
+
+		// Attempt to reverse the debit by crediting the sender again
+		reversalReq := &walletpb.CreditWalletRequest{
+			UserId: senderID.String(),
+			Amount: amount,
+		}
+		if _, revErr := s.wallet.CreditWallet(context.Background(), reversalReq); revErr != nil {
+			// If reversal fails, this is a catastrophic failure. Manual intervention is required.
+			log.Printf("CATASTROPHIC ERROR: FAILED TO REVERSE DEBIT for user %s: %v", senderID, revErr)
+			// TODO: Add to a manual review queue
+		}
+		// Now, create the failed transaction and notify the user
+		failReason := "Credit Operation failed. Your funds have been reversed."
+		if err != nil {
+			failReason = "Credit operation failed. Reversal failed, contact support."
+		}
+		tx := &model.Transaction{
+			SenderUserID:    senderID,
+			RecipientUserID: recipientID,
+			Amount:          amount,
+			Status:          model.StatusFailed,
+			Type:            model.TypeSend,
+			FailureReason:   &failReason,
+		}
+		return s.createAndPublishFailedTx(ctx, tx, failReason)
 	}
 
 	// 4. Both debit and credit succeeded
@@ -123,28 +156,8 @@ func (s *TransactionService) SendMoney(ctx context.Context, senderID, recipientI
 	if err != nil {
 		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
 	}
-	txWithNames, err := s.store.GetTransactionByID(ctx, createdTx.ID)
-	if err != nil {
-		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
-		txWithNames = createdTx
-	}
-	// 5. Publish success message to RabbitMQ
-	msg := PaymentSuccessMessage{
-		Type:          "payment_success",
-		SenderID:      txWithNames.SenderUserID,
-		RecipientID:   txWithNames.RecipientUserID,
-		Amount:        txWithNames.Amount,
-		TransactionID: txWithNames.ID,
-		SenderUsername: txWithNames.SenderUsername,
-		RecipientUsername: txWithNames.RecipientUsername,
-	}
 
-	// we run this in a goroutine so we dont block the HTTP response
-	go func() {
-		if err := s.publisher.Publish(context.Background(),"notify.payment.success", msg); err != nil {
-			log.Printf("Failed to publish payment success message: %v", err)
-		}
-	}()
+	go s.publishSuccessNotification(context.Background(), createdTx)
 
 	return createdTx, nil
 }
@@ -164,27 +177,8 @@ func (s *TransactionService) RequestMoney(ctx context.Context, requesterID, requ
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pending transaction: %w", err)
 	}
-	txWithNames, err := s.store.GetTransactionByID(ctx, createdTx.ID)
-	if err != nil {
-		log.Printf("CriticalError: Wallet Transfer complete but failed to create transaction record: %v", err)
-		txWithNames = createdTx
-	}
-
-	// 2. Publish request message to RabbitMQ
-	msg := PaymentRequestMessage{
-		Type:          "payment_request",
-		RequesterID:   txWithNames.SenderUserID,
-		RequesteeID:   txWithNames.RecipientUserID,
-		Amount:        txWithNames.Amount,
-		TransactionID: txWithNames.ID,
-		RequesterUsername: txWithNames.SenderUsername,
-		RequesteeUsername: txWithNames.RecipientUsername,
-	}
-	go func() {
-		if err := s.publisher.Publish(context.Background(), "notify.payment.request", msg); err != nil {
-			log.Printf("Failed to publish request message: %v", err)
-		}
-	}()
+	
+	go s.publishRequestNotification(context.Background(), createdTx)
 
 	return createdTx, nil
 }
@@ -217,26 +211,47 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 	_, err = s.wallet.DebitWallet(ctx, &walletpb.DebitWalletRequest{UserId: senderID.String(), Amount: amount})
 	if err != nil {
 		// Failed (e.g., insufficient funds)
-		tx.Status = model.StatusFailed
 		failReason := "Insufficient funds"
+		if st, ok := status.FromError(err); ok && st.Code() != codes.InvalidArgument {
+			failReason = "Wallet service error"
+		}
+		
+		tx.Status = model.StatusFailed
 		tx.FailureReason = &failReason
 		s.store.UpdateTransaction(ctx, tx) // Update DB
-		// Publish fail message
-		go s.publishFailedTx(context.Background(), senderID, recipientID, amount, model.TypeRequest, failReason)
-		return nil, fmt.Errorf("insufficient funds")
+		
+		// REFACTOR: Use helper to publish fail message
+		go s.publishFailedNotification(context.Background(), tx)
+		return nil, fmt.Errorf(failReason)
 	}
 
 	// 3b. Credit the original requester
 	_, err = s.wallet.CreditWallet(ctx, &walletpb.CreditWalletRequest{UserId: recipientID.String(), Amount: amount})
 	if err != nil {
-		// Critical error (debit worked, credit failed)
-		log.Printf("CRITICAL ERROR: Approved debit succeeded but credit failed: %v", err)
+		// REFACTOR: CRITICAL FLAW FIX
+		// The debit succeeded but the credit failed. We MUST reverse the debit.
+		log.Printf("CRITICAL ERROR: Approved debit succeeded but credit failed: %v. Reversing debit for user %s", err, senderID)
+		
+		reversalReq := &walletpb.CreditWalletRequest{
+			UserId: senderID.String(),
+			Amount: amount,
+		}
+		if _, revErr := s.wallet.CreditWallet(context.Background(), reversalReq); revErr != nil {
+			log.Printf("CATASTROPHIC ERROR: FAILED TO REVERSE DEBIT for user %s: %v", senderID, revErr)
+		}
+
+		failReason := "Credit operation failed. Your funds have been returned."
+		if err != nil {
+			failReason = "Credit operation failed. Reversal failed, contact support."
+		}
+
 		tx.Status = model.StatusFailed
-		failReason := "Credit operation failed"
 		tx.FailureReason = &failReason
 		s.store.UpdateTransaction(ctx, tx) // Update DB
-		go s.publishFailedTx(context.Background(), senderID, recipientID, amount, model.TypeRequest, failReason)
-		return nil, fmt.Errorf("credit operation failed")
+		
+		// REFACTOR: Use helper to publish fail message
+		go s.publishFailedNotification(context.Background(), tx)
+		return nil, fmt.Errorf(failReason)
 	}
 
 	// 4. Success. Update transaction status to "completed"
@@ -244,22 +259,9 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 	if err := s.store.UpdateTransaction(ctx, tx); err != nil {
 		log.Printf("CRITICAL ERROR: Approval transfer complete but failed to update tx record: %v", err)
 	}
-	
-	// 5. Publish success message
-	msg := PaymentSuccessMessage{
-		Type:          "payment_success",
-		SenderID:      senderID,    // The approver
-		RecipientID:   recipientID, // The original requester
-		Amount:        amount,
-		TransactionID: tx.ID,
-		SenderUsername: tx.RecipientUsername,
-		RecipientUsername: tx.SenderUsername,
-	}
-	go func() {
-		if err := s.publisher.Publish(context.Background(), "notify.payment.success", msg); err != nil {
-			log.Printf("Failed to publish success message: %v", err)
-		}
-	}()
+
+	// 5. Publish "success" message
+	go s.publishSuccessNotification(context.Background(), tx)
 
 	return tx, nil
 }
@@ -288,20 +290,7 @@ func (s *TransactionService) RejectRequest(ctx context.Context, rejecterID uuid.
 	}
 
 	// 4. Publish "rejected" message
-	msg := PaymentRejectedMessage{
-		Type:          "payment_rejected",
-		RequesterID:   tx.SenderUserID,    // Original requester
-		RejecterID:    tx.RecipientUserID, // User who rejected
-		Amount:        tx.Amount,
-		TransactionID: tx.ID,
-		RequesterUsername: tx.SenderUsername,
-		RejecterUsername: tx.RecipientUsername,
-	}
-	go func() {
-		if err := s.publisher.Publish(context.Background(), "notify.payment.rejected", msg); err != nil {
-			log.Printf("Failed to publish reject message: %v", err)
-		}
-	}()
+	go s.publishRejectedNotification(context.Background(), tx)
 
 	return tx, nil
 }
@@ -322,39 +311,101 @@ func (s *TransactionService) GetTransactionHistory(ctx context.Context, userID u
 
 // createAndPublishFailedTx is a helper for when a /send operation fails.
 // It creates the "failed" DB record and publishes the "payment_failed" message.
-func (s *TransactionService) createAndPublishFailedTx(ctx context.Context, senderID, recipientID uuid.UUID, amount int64, txType model.TransactionType, reason string) (*model.Transaction, error) {
+func (s *TransactionService) createAndPublishFailedTx(ctx context.Context, tx *model.Transaction, reason string) (*model.Transaction, error) {
 	// 1. Create "failed" transaction record
-	tx := &model.Transaction{
-		SenderUserID:    senderID,
-		RecipientUserID: recipientID,
-		Amount:          amount,
-		Status:          model.StatusFailed,
-		Type:            txType,
-		FailureReason:   &reason,
-	}
 	createdTx, err := s.store.CreateTransaction(ctx, tx)
 	if err != nil {
 		log.Printf("Error saving failed tx record: %v", err)
 		// We still want to publish the failure, even if DB save failed
+		return nil, fmt.Errorf("failed to save transaction: %w", err)
 	}
 
-	// 2. Publish failure message
-	go s.publishFailedTx(ctx, senderID, recipientID, amount, txType, reason)
-
+	go s.publishFailedNotification(context.Background(), createdTx)
 	return createdTx, fmt.Errorf("%s", reason)
+	
 }
 
 // publishFailedTx is a helper to run publishing in a goroutine.
-func (s *TransactionService) publishFailedTx(ctx context.Context, senderID, recipientID uuid.UUID, amount int64, txType model.TransactionType, reason string) {
-	msg := PaymentFailedMessage{
-		Type:        "payment_failed",
-		SenderID:    senderID,
-		RecipientID: recipientID,
-		Amount:      amount,
-		Reason:      reason,
-		
+func (s *TransactionService) publishFailedNotification(ctx context.Context, tx *model.Transaction) {
+	txWithNames, err := s.store.GetTransactionByID(ctx, tx.ID)
+	if err != nil {
+		log.Printf("Failed to get tx details for fail notification: %v", err)
+		txWithNames = tx
 	}
-	if err := s.publisher.Publish(context.Background(), "notify.payment.failed", msg); err != nil {
-		log.Printf("Failed to publish failure message: %v", err)
+
+	reason := "Transaction Failed"
+	if txWithNames.FailureReason != nil {
+		reason = *txWithNames.FailureReason
+	}
+	msg := PaymentFailedMessage{
+		Type: "payment_failed",
+		SenderID: txWithNames.SenderUserID,
+		RecipientID: txWithNames.RecipientUserID,
+		Amount: txWithNames.Amount,
+		Reason: reason,
+		SenderUsername: txWithNames.SenderUsername,
+		RecipientUsername: txWithNames.RecipientUsername,
+	}
+	if err := s.publisher.Publish(ctx, "notify.payment.failed", msg); err != nil {
+		log.Printf("Failed to publish failed message: %v", err)
+	}
+}
+func (s *TransactionService) publishSuccessNotification(ctx context.Context, tx *model.Transaction) {
+	txWithNames, err := s.store.GetTransactionByID(ctx, tx.ID)
+	if err != nil {
+		log.Printf("Failed to get tx details for success notification: %v", err)
+		txWithNames = tx
+	}
+	msg := PaymentSuccessMessage{
+		Type: "payment_success",
+		SenderID: txWithNames.SenderUserID,
+		RecipientID: txWithNames.RecipientUserID,
+		Amount: txWithNames.Amount,
+		TransactionID: txWithNames.ID,
+		SenderUsername: txWithNames.SenderUsername,
+		RecipientUsername: txWithNames.RecipientUsername,
+	}
+	if err := s.publisher.Publish(ctx, "notify.payment.success", msg); err != nil {
+		log.Printf("Failed to publish success message: %v", err)
+	}
+}
+
+func (s *TransactionService) publishRequestNotification(ctx context.Context, tx *model.Transaction) {
+	txWithNames, err := s.store.GetTransactionByID(ctx, tx.ID)
+	if err != nil {
+		log.Printf("Failed to get tx details for request notification: %v", err)
+		txWithNames = tx
+	}
+	msg := PaymentRequestMessage{
+		Type: "payment_request",
+		RequesterID: txWithNames.SenderUserID,
+		RequesteeID: txWithNames.RecipientUserID,
+		Amount: txWithNames.Amount,
+		TransactionID: txWithNames.ID,
+		RequesterUsername: txWithNames.SenderUsername,
+		RequesteeUsername: txWithNames.RecipientUsername,
+	}
+	if err := s.publisher.Publish(ctx, "notify.payment.request", msg); err != nil {
+		log.Printf("Failed to publish request message: %v", err)
+	}
+}
+
+func (s *TransactionService) publishRejectedNotification(ctx context.Context, tx *model.Transaction){
+	txWithNames, err := s.store.GetTransactionByID(ctx, tx.ID)
+	if err != nil {
+		log.Printf("Failed to get tx details for reject notification: %v", err)
+		txWithNames = tx
+	}
+	msg := PaymentRejectedMessage{
+		Type: "payment_rejected",
+		RequesterID: txWithNames.SenderUserID,
+		RejecterID: txWithNames.RecipientUserID,
+		Amount: txWithNames.Amount,
+		TransactionID: txWithNames.ID,
+		RequesterUsername: txWithNames.SenderUsername,
+		RejecterUsername: txWithNames.RecipientUsername,
+	}
+	if err := s.publisher.Publish(ctx, "notify.payment.rejected", msg); err != nil {
+		log.Printf("Failed to publish reject message: %v", err)
 	}
 }

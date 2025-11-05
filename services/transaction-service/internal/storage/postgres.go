@@ -48,7 +48,13 @@ func (s *PostgresStorage) CreateTransaction(ctx context.Context, tx *model.Trans
 // GetTransactionByID retrieves a single transaction by its ID
 func (s *PostgresStorage) GetTransactionByID(ctx context.Context, txID uuid.UUID) (*model.Transaction, error){
 	var tx model.Transaction
-	if err := s.db.WithContext(ctx).Where("id = ?", txID).First(&tx).Error; err != nil {
+	if err := s.db.WithContext(ctx).
+		Table("transactions AS t").
+		Select("t.*, su.username as sender_username, ru.username as recipient_username").
+		Joins("LEFT JOIN users AS su ON su.id = t.sender_user_id").
+		Joins("LEFT JOIN users AS ru ON ru.id = t.recipient_user_id").
+		Where("t.id = ?", txID).
+		First(&tx).Error; err != nil {
 		return nil, err
 	}
 	return &tx, nil

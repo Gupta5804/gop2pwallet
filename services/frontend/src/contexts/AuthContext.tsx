@@ -82,36 +82,89 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ws.current.onmessage = (event) => {
             const message = JSON.parse(event.data);
             const currentUser = userRef.current;
-            // show a toast notification
-            switch (message.type) {
-                case "payment_success":
-                    const amount = (message.amount / 100).toFixed(2);
-                    if (currentUser?.id === message.sender_id) {
-                        toaster.success({
-                            title: "Payment Sent!",
-                            description: `You have sent ₹${amount} to ${message.recipientusername}.`,
-                        });
-                    }
-                    else if(currentUser?.id === message.recipient_id) {
-                        toaster.success({
-                            title: "Payment Received!",
-                            description: `You have received ₹${amount} from ${message.senderusername}.`,
-                        });
-                    }
-                    break;
-                case "payment_request":
+
+            if (!currentUser) return;
+
+            const amount = (message.amount / 100).toFixed(2);
+
+            // 1. Payment success (Sent to Sender and Recipient)
+            if (message.type == "payment_success") {
+                if (currentUser.id === message.sender_id) {
+                    toaster.success({
+                        title: "Payment Sent!",
+                        description: `You have sent ₹${amount} to ${message.recipient_username}.`,
+                    });
+                } else if (currentUser.id === message.recipient_id) {
+                    toaster.success({
+                        title: "Payment Received!",
+                        description: `You have received ₹${amount} from ${message.sender_username}.`,
+                    });
+                }
+            }
+            // 2. Payment failed (Sent only to sender)
+            else if (message.type == "payment_failed") {
+                if (currentUser.id === message.sender_id) {
+                    toaster.error({
+                        title: "Payment Failed!",
+                        description: `Payment of ₹${amount} to ${message.recipient_username} failed: ${message.reason}.`,
+                    });
+                }
+            }
+            // 3. Payment Request (Sent only to requestee)
+            else if (message.type == "payment_request") {
+                if (currentUser.id === message.requestee_id) {
                     toaster.info({
                         title: "New Request",
-                        description: `${message.sender_name} has requested ₹${message.amount / 100}.`,
+                        description: `${message.requester_username} has requested ₹${amount}.`,
                     });
-                    break;
-                case "payment_rejected":
-                    toaster.error({
-                        title: "Request Rejected",
-                        description: `${message.sender_name} has rejected your request of ₹${message.amount / 100}.`,
-                    });
-                    break;
+                }
             }
+            // 4. Payment Rejected (Sent only to requester)
+            else if (message.type == "payment_rejected") {
+                if (currentUser.id === message.requester_id) {
+                    toaster.error({
+                        title: "Request Rejected!",
+                        description: `${message.requestee_username} has rejected your request for ₹${amount}.`,
+                    });
+                }
+            }    
+            // show a toast notification
+            // switch (message.type) {
+            //     case "payment_success":
+            //         const amount = (message.amount / 100).toFixed(2);
+            //         if (currentUser?.id === message.sender_id) {
+            //             toaster.success({
+            //                 title: "Payment Sent!",
+            //                 description: `You have sent ₹${amount} to ${message.recipient_username}.`,
+            //             });
+            //         }
+            //         else if(currentUser?.id === message.recipient_id) {
+            //             toaster.success({
+            //                 title: "Payment Received!",
+            //                 description: `You have received ₹${amount} from ${message.sender_username}.`,
+            //             });
+            //         }
+            //         break;
+            //     case "payment_request":
+            //         if (currentUser?.id === message.requester_id) {
+            //             return;
+            //         }
+
+            //         toaster.info({
+            //             title: "New Request",
+            //             description: `${message.requester_username} has requested ₹${message.amount / 100}.`,
+            //         });
+            //         break;
+            //     case "payment_rejected":
+            //         if (currentUser?.id === message.rejecter_id) {
+            //             return;
+            //         }
+            //         toaster.error({
+            //             title: "Request Rejected",
+            //             description: `${message.rejecter_username} has rejected your request of ₹${message.amount / 100}.`,
+            //         });
+            //         break;
+            // }
             refreshCallbacks.current.forEach((callback) => callback());
         };
 
