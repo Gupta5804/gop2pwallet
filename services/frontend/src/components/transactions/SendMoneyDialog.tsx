@@ -1,6 +1,6 @@
 // src/components/transactions/SendMoneyDialog.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api, User } from "@/services/api";
 import UserSearch from "../ui/UserSearch";
 import { toaster } from "../ui/toaster";
@@ -20,17 +20,23 @@ import { MdOutlineCurrencyRupee } from "react-icons/md";
 // Define props
 interface SendMoneyDialogProps {
     onTransactionSuccess: () => void;
+    prefilledUser?: User;
 }
 
 // create overlay
 export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
-    const { onTransactionSuccess, onOpenChange, ...rest} = props;
+    const { onTransactionSuccess, onOpenChange, prefilledUser, ...rest} = props;
 
     // state
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>( prefilledUser || null);
     const [amount, setAmount] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        if (prefilledUser) {
+            setSelectedUser(prefilledUser);
+        }
+    }, [prefilledUser]);
     const handleUserSelected = (user: User) => {
         setSelectedUser(user);
     };
@@ -47,8 +53,8 @@ export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
         }
         const amountInPaise = Math.round(amountFloat * 100);
 
+        setIsLoading(true);
         try {
-            setIsLoading(true);
             await api.sendMoney({
                 recipient_id: selectedUser.id,
                 amount: amountInPaise,
@@ -60,8 +66,6 @@ export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
             onTransactionSuccess();
             onOpenChange?.({ open: false}); // close the dialog
 
-            setSelectedUser(null);
-            setAmount("");
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || "Failed to send money.";
             toaster.error({ title: "Error", description: errorMessage });
@@ -89,14 +93,28 @@ export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
                                     <Field.Label>Recipient</Field.Label>
                                     {selectedUser ? (
                                         <Box>
+                                            <InputGroup
+                                                flex="1"
+                                                endElement={
+                                                    !prefilledUser && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setSelectedUser(null)}
+                                                        >
+                                                            Change
+                                                        </Button>
+                                                    )
+                                                }
+                                            >
+                                            
                                             <Input
-                                                value={`${selectedUser.username} (${selectedUser.email})`}
-                                                disabled
-                                                mr={2}
-                                            />
-                                            <Button size="sm" onClick={() => setSelectedUser(null)} mt={2}>
-                                                Change User
-                                            </Button>
+                                                value={selectedUser.username}
+                                                readOnly
+                                                
+                                                />
+                                            
+                                            </InputGroup>
                                         </Box>
                                     ) : (
                                         <UserSearch onUserSelected={handleUserSelected} zIndex="toast"/>
@@ -120,6 +138,7 @@ export const sendMoneyDialog = createOverlay<SendMoneyDialogProps>((props) => {
                                     colorPalette="green"
                                     loading={isLoading}
                                     disabled={!selectedUser || isLoading}
+                                    onClick={handleSubmit}
                                 >
                                     Send Money
                                 </Button>

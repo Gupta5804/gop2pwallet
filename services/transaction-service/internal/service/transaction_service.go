@@ -240,9 +240,9 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 			log.Printf("CATASTROPHIC ERROR: FAILED TO REVERSE DEBIT for user %s: %v", senderID, revErr)
 		}
 
-		failReason := "Credit operation failed. Your funds have been returned."
+		failReason := "credit operation failed. Your funds have been returned."
 		if err != nil {
-			failReason = "Credit operation failed. Reversal failed, contact support."
+			failReason = "credit operation failed. Reversal failed, contact support."
 		}
 
 		tx.Status = model.StatusFailed
@@ -297,14 +297,14 @@ func (s *TransactionService) RejectRequest(ctx context.Context, rejecterID uuid.
 
 // GetPendingTransactions fetches all pending requests for a user.
 // This implements the logic for "/api/vs/transactions/pending"
-func (s *TransactionService) GetPendingTransactions(ctx context.Context, userID uuid.UUID, limit int) ([]*model.Transaction, error) {
-	return s.store.GetPendingTransactionsByRecipientID(ctx, userID, limit)
+func (s *TransactionService) GetPendingTransactions(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Transaction, error) {
+	return s.store.GetPendingTransactionsByRecipientID(ctx, userID, limit, offset)
 }
 
 // GetTransactionHistory fetches a user's transaction history.
 // This implements the logic for "/api/v1/transactions"
-func (s *TransactionService) GetTransactionHistory(ctx context.Context, userID uuid.UUID, limit int) ([]*model.Transaction, error) {
-	return s.store.GetTransactionHistoryByUserID(ctx, userID, limit)
+func (s *TransactionService) GetTransactionHistory(ctx context.Context, userID uuid.UUID, withUserID uuid.NullUUID, limit, offset int) ([]*model.Transaction, error) {
+	return s.store.GetTransactionHistoryByUserID(ctx, userID, withUserID, limit,offset)
 }
 
 // --- Internal Helper Methods ---

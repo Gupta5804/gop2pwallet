@@ -6,7 +6,9 @@ export interface User {
     id: string;
     username: string;
     email: string;
-    created_at: string;
+    createdAt: string;
+    firstName: string;
+    lastName: string;
 }
 export interface AuthResponse {
     token: string;
@@ -82,18 +84,26 @@ export const api = {
     getBalance: () => apiClient.get<BalanceResponse>('/wallet/balance'),
 
     // --- transaction service ---
-    getTransactionHistory: (limit?: number)=> {
-        const url = limit ? `/transactions?limit=${limit}` : '/transactions';
+    getTransactionHistory: (limit?: number,offset?: number, withUserId?: string)=> {
+        const params = new URLSearchParams();
+        if (limit) params.append('limit', limit.toString());
+        if (offset) params.append('offset', offset.toString());
+        if (withUserId) params.append('with_user', withUserId);
+
+        const queryString = params.toString();
+        const url = queryString ? `/transactions?${queryString}` : '/transactions';
         return apiClient.get<Transaction[]>(url);
     },
     sendMoney: (payload: SendMoneyPayload) =>
         apiClient.post<Transaction>('/transactions/send', payload),
     requestMoney: (payload: RequestMoneyPayload) =>
         apiClient.post<Transaction>('/transactions/request', payload),
-    getPendingTransactions: (limit?: number) => {
-        const url = limit
-            ? `/transactions/pending?limit=${limit}`
-            : '/transactions/pending';
+    getPendingTransactions: (limit?: number,offset?: number) => {
+        const params = new URLSearchParams();
+        if (limit) params.append('limit', limit.toString());
+        if (offset) params.append('offset', offset.toString());
+        const queryString = params.toString();
+        const url = queryString? `/transactions/pending?${queryString}` : '/transactions/pending';
         return apiClient.get<Transaction[]>(url);
     },
     approveTransaction: (txID: string) =>

@@ -1,6 +1,6 @@
 // src/components/transactions/RequestMoneyDialog.tsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, User } from "@/services/api";
 import UserSearch from "@/components/ui/UserSearch";
 import { toaster } from "../ui/toaster";
@@ -20,16 +20,22 @@ import {
 import { MdOutlineCurrencyRupee } from "react-icons/md";
 interface RequestMoneyDialogProps {
     onRequestSuccess: () => void;
+    prefilledUser?: User;
 }
 
 export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props) => {
-    const { onRequestSuccess, onOpenChange, ...rest} = props;
+    const { onRequestSuccess, onOpenChange,prefilledUser, ...rest} = props;
 
     // states
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>( prefilledUser || null);
     const [amount, setAmount] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        if (prefilledUser) {
+            setSelectedUser(prefilledUser);
+        }
+    }, [prefilledUser]);
     const handleUserSelected = (user: User) => {
         setSelectedUser(user);
     };
@@ -45,8 +51,8 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
         }
         const amountInPaise = Math.round(amountFloat * 100);
 
+        setIsLoading(true);
         try {
-            setIsLoading(true);
 
             await api.requestMoney({
                 requestee_id: selectedUser.id,
@@ -59,9 +65,6 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
             });
             onRequestSuccess();
             onOpenChange?.({ open: false }); // close the dialog
-
-            setSelectedUser(null);
-            setAmount("");
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || "Request failed";
             toaster.error({ title: "Error", description: errorMessage });
@@ -93,18 +96,25 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                     <Field.Label>Request from</Field.Label>
                                     {selectedUser ? (
                                         <Box>
-                                            <Input
-                                                value={`${selectedUser.username} (${selectedUser.email})`}
-                                                disabled
-                                                mr={2}
-                                            />
-                                            <Button
-                                                size="sm"
-                                                onClick={() => setSelectedUser(null)}
-                                                mt={2}
+                                            <InputGroup
+                                                flex="1"
+                                                endElement={
+                                                    !prefilledUser && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setSelectedUser(null)}
+                                                        >
+                                                            Change
+                                                        </Button>
+                                                    )
+                                                }
                                             >
-                                                Change User
-                                            </Button>
+                                            <Input
+                                                value={selectedUser.username}
+                                                readOnly
+                                                />
+                                            </InputGroup>
                                         </Box>
                                     ):(
                                         <UserSearch onUserSelected={handleUserSelected} zIndex="toast"/>
@@ -128,6 +138,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                     colorPalette="blue"
                                     loading={isLoading}
                                     disabled ={!selectedUser || isLoading}
+                                    onClick={handleSubmit}
                                 >
                                     Request Money
                                 </Button>

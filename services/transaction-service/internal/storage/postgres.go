@@ -15,8 +15,8 @@ type TransactionStore interface {
 	CreateTransaction(ctx context.Context, tx *model.Transaction) (*model.Transaction, error)
 	GetTransactionByID(ctx context.Context, txID uuid.UUID) (*model.Transaction, error)
 	UpdateTransaction(ctx context.Context, tx *model.Transaction) error
-	GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit int) ([]*model.Transaction, error)
-	GetTransactionHistoryByUserID(ctx context.Context, userID uuid.UUID, withUserID uuid.NullUUID, limit int) ([]*model.Transaction, error)
+	GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit, offset int) ([]*model.Transaction, error)
+	GetTransactionHistoryByUserID(ctx context.Context, userID uuid.UUID, withUserID uuid.NullUUID, limit, offset int) ([]*model.Transaction, error)
 }
 
 type PostgresStorage struct {
@@ -68,7 +68,7 @@ func (s *PostgresStorage) UpdateTransaction (ctx context.Context, tx *model.Tran
 
 // GetPendingTransactionsByRecepient fetches all "pending transactions" for a specific user
 // This is for the "view pending" endpoint
-func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit int) ([]*model.Transaction, error){
+func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Context, recipientID uuid.UUID, limit,offset int) ([]*model.Transaction, error){
 	var transactions []*model.Transaction
 	query := s.db.WithContext(ctx).
 		Table("transactions AS t").
@@ -79,6 +79,9 @@ func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Contex
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
 	if err := query.Find(&transactions).Error; err != nil {
 		return nil, err
 	}
@@ -88,7 +91,7 @@ func (s *PostgresStorage) GetPendingTransactionsByRecipientID(ctx context.Contex
 // GetTransactionHistoryByUserID fetches all completed/failed/rejected transactions for a user
 // This is for the "Get History" endpoint
 
-func (s *PostgresStorage) GetTransactionHistoryByUserID (ctx context.Context, userID uuid.UUID, withUserID uuid.NullUUID, limit int) ([]*model.Transaction,error){
+func (s *PostgresStorage) GetTransactionHistoryByUserID (ctx context.Context, userID uuid.UUID, withUserID uuid.NullUUID, limit, offset int) ([]*model.Transaction,error){
 	var transactions []*model.Transaction
 
 	query := s.db.WithContext(ctx).
@@ -101,15 +104,18 @@ func (s *PostgresStorage) GetTransactionHistoryByUserID (ctx context.Context, us
 	// Apply limit if provided (limit > 0)
 	if withUserID.Valid {
 		query = query.Where(
-			"(t.sender_user_id = ? AND t.recipient_user_id = ?) OR (t.sender_user_id = ? AND t.recipient_user_id = ?)",
-			userID, withUserID.UUID, withUserID.UUID, userID,
+			"((t.sender_user_id = ? AND t.recipient_user_id = ?) OR (t.sender_user_id = ? AND t.recipient_user_id = ?) AND t.status != ?)",
+			userID, withUserID.UUID, withUserID.UUID, userID, model.StatusPending,
 		)
 	} else {
-		query = query.Where("(t.sender_user_id = ? OR t.recipient_user_id = ?)", userID, userID)
+		query = query.Where("(t.sender_user_id = ? OR t.recipient_user_id = ?) AND t.status != ?", userID, userID, model.StatusPending)
 	}
 	query = query.Order("t.created_at desc")
 	if limit > 0 {
 		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
 	}
 
 	if err := query.Find(&transactions).Error; err != nil {

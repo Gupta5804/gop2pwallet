@@ -61,13 +61,19 @@ export default function TransactionList({
                         </Link>
                     );
                     const transactionElement = isSender ? (
+                        <>
+                        Sent to
                         <TransactionLink username={recepientName}>
-                            Sent to {recepientName}...
+                             {recepientName}
                         </TransactionLink>
+                        </>
                     ) : (
+                        <>
+                        Received from
                         <TransactionLink username={senderName}>
-                            Received from {senderName}...
+                             {senderName}
                         </TransactionLink>
+                        </>
                     );
                     return (
                         <Flex

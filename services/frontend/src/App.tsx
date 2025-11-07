@@ -8,8 +8,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import UserProfilePage from './pages/UserProfilePage';
-
-
+import AllRequestsPage from './pages/AllRequestPage';
+import AllTransactionsPage from './pages/AllTransactionsPage';
 
 
 function App() {
@@ -31,6 +31,8 @@ function App() {
         {/* <Route path="/history" element={<HistoryPage />} /> */}
         {/* <Route path="/users/:username" element={<UserProfilePage />} /> */}
         <Route path="/users/:username" element={<UserProfilePage />} />
+        <Route path="/requests" element={<AllRequestsPage />} />
+        <Route path="/transactions" element={<AllTransactionsPage />} />
         </Route>
       </Route>
     </Routes>
