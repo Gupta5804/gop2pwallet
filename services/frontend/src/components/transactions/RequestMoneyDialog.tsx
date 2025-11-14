@@ -17,10 +17,10 @@ import {
     Text,
     HStack,
     Icon,
-    IconButton,
+    CloseButton,
 } from "@chakra-ui/react";
 import { MdOutlineCurrencyRupee } from "react-icons/md";
-import { LuArrowDownLeft, LuX } from "react-icons/lu";
+import { LuArrowDownLeft } from "react-icons/lu";
 
 interface RequestMoneyDialogProps {
     onRequestSuccess: () => void;
@@ -54,6 +54,13 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
         setSelectedUser(user);
     };
 
+    // Handle close - this is the proper way to close the overlay
+    const handleClose = () => {
+        setAmount("");
+        setSelectedUser(prefilledUser || null);
+        onOpenChange?.({ open: false });
+    };
+
     const handleSubmit = async () => {
         if (!selectedUser) {
             toaster.error({ title: "Please select a user" });
@@ -80,12 +87,8 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
 
             onRequestSuccess();
             
-            // Reset form state
-            setAmount("");
-            setSelectedUser(prefilledUser || null);
-            
-            // Close dialog
-            onOpenChange?.({ open: false });
+            // Close dialog after success
+            handleClose();
         } catch (err: any) {
             const errorMessage = err.response?.data?.error || "Request failed";
             toaster.error({ title: "Error", description: errorMessage });
@@ -98,20 +101,21 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
         <Dialog.Root 
             open={open}
             onOpenChange={onOpenChange}
+            closeOnEsc={true}
+            closeOnInteractOutside={true}
             {...rest}
         >
             <Portal>
-                <Dialog.Backdrop
-                    animation="fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+                <Dialog.Backdrop 
+                    bg="rgba(0, 0, 0, 0.5)"
+                    onClick={() => handleClose()}
                 />
-                <Dialog.Positioner>
+                <Dialog.Positioner pointerEvents="auto">
                     <Dialog.Content
                         maxW="md"
                         bg="white"
                         _dark={{ bg: "gray.800" }}
                         boxShadow="lg"
-                        animation="scaleIn 300ms cubic-bezier(0.4, 0, 0.2, 1)"
-                        transformOrigin="center"
                         borderRadius="lg"
                     >
                         {/* Header */}
@@ -120,48 +124,32 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                             color="white"
                             p={6}
                             borderTopRadius="lg"
-                            animation="slideInDown 250ms cubic-bezier(0.4, 0, 0.2, 1)"
-                            position="relative"
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
                         >
-                            <HStack gap={3} width="100%" justify="space-between">
-                                <HStack gap={3} flex={1}>
-                                    <Icon 
-                                        as={LuArrowDownLeft} 
-                                        boxSize={6}
-                                        animation="slideInLeft 300ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                    />
-                                    <Text
-                                        fontSize="lg"
-                                        fontWeight={700}
-                                        animation="slideInLeft 350ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                    >
-                                        Request Money
-                                    </Text>
-                                </HStack>
-                                <Dialog.CloseTrigger asChild>
-                                    <IconButton
-                                        variant="ghost"
-                                        size="sm"
-                                        aria-label="Close dialog"
-                                        transition="all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                        _hover={{ 
-                                            transform: "rotate(90deg) scale(1.1)",
-                                            bg: "rgba(255, 255, 255, 0.2)",
-                                        }}
-                                        _active={{ 
-                                            transform: "scale(0.95)",
-                                        }}
-                                    >
-                                        <Icon as={LuX} boxSize={5} />
-                                    </IconButton>
-                                </Dialog.CloseTrigger>
+                            <HStack gap={3}>
+                                <Icon 
+                                    as={LuArrowDownLeft} 
+                                    boxSize={6}
+                                />
+                                <Text
+                                    fontSize="lg"
+                                    fontWeight={700}
+                                >
+                                    Request Money
+                                </Text>
                             </HStack>
+                            <CloseButton 
+                                size="lg"
+                                onClick={handleClose}
+                                _hover={{ bg: "rgba(255, 255, 255, 0.2)" }}
+                            />
                         </Box>
 
                         {/* Body */}
                         <Box 
                             p={6}
-                            animation="slideInUp 300ms cubic-bezier(0.4, 0, 0.2, 1)"
                         >
                             <VStack
                                 gap={6}
@@ -173,9 +161,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                 }}
                             >
                                 {/* Requestee Field */}
-                                <Field.Root
-                                    animation="slideInUp 350ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                >
+                                <Field.Root>
                                     <Field.Label fontWeight={600} mb={2}>
                                         Request From
                                     </Field.Label>
@@ -191,7 +177,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                                 bg: "rgba(59, 130, 246, 0.1)",
                                                 borderColor: "blue.900"
                                             }}
-                                            transition="all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+                                            transition="all 200ms ease"
                                             _hover={{
                                                 boxShadow: "sm",
                                                 borderColor: "blue.300",
@@ -212,15 +198,6 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                                     onClick={() => setSelectedUser(null)}
                                                     color="blue.600"
                                                     _dark={{ color: "blue.400" }}
-                                                    transition="all 150ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                                    _hover={{
-                                                        bg: "blue.100",
-                                                        _dark: { bg: "rgba(59, 130, 246, 0.2)" },
-                                                        transform: "scale(1.05)",
-                                                    }}
-                                                    _active={{
-                                                        transform: "scale(0.95)",
-                                                    }}
                                                     px={4}
                                                     py={2}
                                                 >
@@ -234,9 +211,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                 </Field.Root>
 
                                 {/* Amount Field */}
-                                <Field.Root
-                                    animation="slideInUp 400ms cubic-bezier(0.4, 0, 0.2, 1)"
-                                >
+                                <Field.Root>
                                     <Field.Label fontWeight={600} mb={2}>
                                         Amount (₹)
                                     </Field.Label>
@@ -256,8 +231,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                                 fontSize="lg"
                                                 fontWeight={500}
                                                 px={4}
-                                                py={2}
-                                                transition="all 150ms cubic-bezier(0.4, 0, 0.2, 1)"
+                                                py={3}
                                                 _focus={{
                                                     borderColor: "teal.500",
                                                     boxShadow: "0 0 0 3px rgba(20, 184, 166, 0.1)",
@@ -280,7 +254,6 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                     fontWeight={600}
                                     loading={isLoading}
                                     disabled={!selectedUser || !amount || isLoading}
-                                    transition="all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
                                     _hover={{
                                         opacity: 0.9,
                                         transform: "translateY(-2px)",
@@ -288,7 +261,6 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                     }}
                                     _active={{
                                         transform: "scale(0.98)",
-                                        transition: "all 100ms cubic-bezier(0.4, 0, 0.2, 1)",
                                     }}
                                     _disabled={{
                                         opacity: 0.5,
@@ -296,9 +268,8 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
                                         transform: "none",
                                     }}
                                     onClick={handleSubmit}
-                                    animation="slideInUp 450ms cubic-bezier(0.4, 0, 0.2, 1)"
                                     px={6}
-                                    py={3}
+                                    py={4}
                                 >
                                     {isLoading ? "Sending request..." : `Request ₹${amount || "0"}`}
                                 </Button>

@@ -254,6 +254,13 @@ func (s *TransactionService) ApproveRequest(ctx context.Context, approverID uuid
 		return nil, fmt.Errorf(failReason)
 	}
 
+	// IMPORTANT: We need to update the sender and recipient fields to reflect actual money flow.
+	// When a request is approved, the money flows FROM the approver (who was the recipient)
+	// TO the requester (who was the sender in the pending request).
+	// We swap them so the transaction displays correctly in the user's history.
+	tx.SenderUserID = senderID      // The person who paid (approver)
+	tx.RecipientUserID = recipientID // The person who received (requester)
+
 	// 4. Success. Update transaction status to "completed"
 	tx.Status = model.StatusCompleted
 	if err := s.store.UpdateTransaction(ctx, tx); err != nil {

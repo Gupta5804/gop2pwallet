@@ -2,10 +2,7 @@
 import { 
     Box, 
     Flex, 
-    Menu,
     Avatar,
-    Portal,
-    MenuItemGroup,
     Icon,
     IconButton,
     Drawer,
@@ -16,14 +13,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import UserSearch from '@/components/ui/UserSearch';
 import { User } from '@/services/api';
-import { useState, useEffect } from 'react';
-import { LuMenu, LuX } from 'react-icons/lu';
+import { useState, useEffect, useRef } from 'react';
+import { LuMenu, LuX, LuUser, LuLogOut } from 'react-icons/lu';
 
 export default function NavBar() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const avatarRef = useRef<HTMLDivElement>(null);
 
     // Track scroll position for shadow effect
     useEffect(() => {
@@ -34,20 +34,36 @@ export default function NavBar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current && 
+                !dropdownRef.current.contains(event.target as Node) &&
+                avatarRef.current &&
+                !avatarRef.current.contains(event.target as Node)
+            ) {
+                setDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleUserNavigation = (selectedUser: User) => {
         navigate(`/users/${selectedUser.username}`);
     };
-    
-    const handleMenuSelect = (details: { value: string }) => {
-        switch(details.value) {
-            case "profile":
-                navigate(`/users/${user?.username}`);
-                break;
-            case "logout":
-                logout();
-                navigate('/login');
-                break;
-        }
+
+    const handleProfileClick = () => {
+        navigate(`/users/${user?.username}`);
+        setDropdownOpen(false);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+        setDropdownOpen(false);
     };
 
     const closeMobileMenu = () => setMobileMenuOpen(false);
@@ -129,77 +145,123 @@ export default function NavBar() {
                         <Icon as={LuMenu} boxSize={6} />
                     </IconButton>
 
-                    {/* User Profile Avatar - Show on all screens */}
+                    {/* User Profile Avatar with Custom Dropdown - Show on all screens */}
                     {user && (
-                        <Menu.Root
-                            positioning={{ 
-                                placement: "bottom-end",
-                                offset: { mainAxis: 8, crossAxis: 0 }
-                            }}
-                            onSelect={handleMenuSelect}
-                            closeOnSelect={true}
-                        >
-                            <Menu.Trigger 
-                                asChild
+                        <Box position="relative" ref={avatarRef}>
+                            <Avatar.Root 
+                                size={{ base: 'sm', md: 'md' }}
+                                _hover={{
+                                    transform: 'scale(1.08)',
+                                    transition: 'transform 0.2s ease',
+                                    cursor: 'pointer'
+                                }}
                                 cursor="pointer"
+                                border="2px solid"
+                                borderColor="rgba(255, 255, 255, 0.3)"
+                                onClick={() => setDropdownOpen(!dropdownOpen)}
                             >
-                                <Avatar.Root 
-                                    size={{ base: 'sm', md: 'md' }}
-                                    _hover={{
-                                        transform: 'scale(1.08)',
-                                        transition: 'transform 0.2s ease'
-                                    }}
-                                    cursor="pointer"
-                                >
-                                    <Avatar.Fallback 
-                                        name={user.username}
-                                        bg="rgba(255, 255, 255, 0.25)"
-                                        color="white"
-                                        fontWeight={600}
-                                    />
-                                </Avatar.Root>
-                            </Menu.Trigger>
+                                <Avatar.Fallback 
+                                    name={user.username}
+                                    bg="rgba(255, 255, 255, 0.25)"
+                                    color="white"
+                                    fontWeight={600}
+                                />
+                            </Avatar.Root>
 
-                            <Portal>
-                                <Menu.Positioner>
-                                    <Menu.Content 
-                                        bg="white"
-                                        boxShadow="lg"
-                                        rounded="lg"
-                                        minW="220px"
-                                        zIndex={1000}
-                                        border="1px solid"
+                            {/* Custom Dropdown Menu */}
+                            {dropdownOpen && (
+                                <Box
+                                    ref={dropdownRef}
+                                    position="absolute"
+                                    top="calc(100% + 8px)"
+                                    right="0"
+                                    bg="white"
+                                    boxShadow="0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)"
+                                    rounded="xl"
+                                    minW="240px"
+                                    zIndex={9999}
+                                    border="1px solid"
+                                    borderColor="gray.100"
+                                    py={0}
+                                    overflow="hidden"
+                                    animation="slideDown 200ms ease-out"
+                                    sx={{
+                                        '@keyframes slideDown': {
+                                            from: {
+                                                opacity: 0,
+                                                transform: 'translateY(-10px)'
+                                            },
+                                            to: {
+                                                opacity: 1,
+                                                transform: 'translateY(0)'
+                                            }
+                                        }
+                                    }}
+                                >
+                                    {/* Header with user name */}
+                                    <Box
+                                        px={4}
+                                        py={3}
+                                        borderBottom="1px solid"
                                         borderColor="gray.100"
+                                        bg="linear-gradient(135deg, #F0FDFA 0%, #F0F9FF 100%)"
                                     >
-                                        <MenuItemGroup title={user.username}>
-                                            <Menu.Item 
-                                                value="profile"
-                                                px={4}
-                                                py={3}
-                                                _hover={{
-                                                    bg: 'gray.100',
-                                                }}
-                                            >
-                                                My Profile
-                                            </Menu.Item>
-                                        </MenuItemGroup>
-                                        <Menu.Separator />
-                                        <Menu.Item 
-                                            value="logout"
-                                            color="fg.error"
-                                            px={4}
-                                            py={3}
-                                            _hover={{
-                                                bg: "red.50",
-                                                color: "fg.error",
-                                            }}
+                                        <Text 
+                                            fontSize="sm"
+                                            fontWeight={700}
+                                            color="#0E7C86"
+                                            letterSpacing="0.5px"
                                         >
-                                            Logout
-                                        </Menu.Item>
-                                    </Menu.Content>
-                                </Menu.Positioner>
-                            </Portal>
-                        </Menu.Root>
+                                            {user.username}
+                                        </Text>
+                                    </Box>
+                                    
+                                    {/* Profile Item */}
+                                    <Box
+                                        px={4}
+                                        py={3}
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={3}
+                                        fontSize="sm"
+                                        fontWeight={500}
+                                        color="gray.700"
+                                        _hover={{
+                                            bg: '#F0FDFA',
+                                            color: '#0E7C86',
+                                            transition: 'all 0.2s ease',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={handleProfileClick}
+                                    >
+                                        <Icon as={LuUser} boxSize={4} color="#14B8A6" />
+                                        My Profile
+                                    </Box>
+                                    
+                                    {/* Logout Item */}
+                                    <Box
+                                        px={4}
+                                        py={3}
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={3}
+                                        fontSize="sm"
+                                        fontWeight={500}
+                                        color="red.600"
+                                        _hover={{
+                                            bg: "red.50",
+                                            color: "red.700",
+                                            transition: 'all 0.2s ease',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={handleLogout}
+                                    >
+                                        <Icon as={LuLogOut} boxSize={4} color="red.500" />
+                                        Logout
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
                     )}
                 </Flex>
             </Flex>
@@ -264,11 +326,14 @@ export default function NavBar() {
                                     <>
                                         <Box
                                             p={4}
-                                            bg="gray.50"
+                                            bg="linear-gradient(135deg, #F0FDFA 0%, #F0F9FF 100%)"
                                             rounded="lg"
                                             cursor="pointer"
+                                            border="1px solid"
+                                            borderColor="rgb(20, 184, 166)"
                                             _hover={{
-                                                bg: 'gray.100',
+                                                bg: 'linear-gradient(135deg, #E0F8F5 0%, #E0F7FF 100%)',
+                                                borderColor: '#0E7C86',
                                                 transition: 'all 0.2s ease'
                                             }}
                                             onClick={() => {
@@ -276,15 +341,20 @@ export default function NavBar() {
                                                 closeMobileMenu();
                                             }}
                                         >
-                                            <Text fontWeight={600}>
-                                                My Profile
-                                            </Text>
-                                            <Text 
-                                                fontSize="sm" 
-                                                color="gray.600"
-                                            >
-                                                @{user.username}
-                                            </Text>
+                                            <Flex gap={3} align="center">
+                                                <Icon as={LuUser} boxSize={5} color="#14B8A6" />
+                                                <Box>
+                                                    <Text fontWeight={600} color="#0E7C86">
+                                                        My Profile
+                                                    </Text>
+                                                    <Text 
+                                                        fontSize="sm" 
+                                                        color="gray.600"
+                                                    >
+                                                        @{user.username}
+                                                    </Text>
+                                                </Box>
+                                            </Flex>
                                         </Box>
 
                                         <Box
@@ -292,8 +362,11 @@ export default function NavBar() {
                                             bg="red.50"
                                             rounded="lg"
                                             cursor="pointer"
+                                            border="1px solid"
+                                            borderColor="red.200"
                                             _hover={{
                                                 bg: 'red.100',
+                                                borderColor: 'red.400',
                                                 transition: 'all 0.2s ease'
                                             }}
                                             onClick={() => {
@@ -302,12 +375,15 @@ export default function NavBar() {
                                                 closeMobileMenu();
                                             }}
                                         >
-                                            <Text 
-                                                fontWeight={600}
-                                                color="red.600"
-                                            >
-                                                Logout
-                                            </Text>
+                                            <Flex gap={3} align="center">
+                                                <Icon as={LuLogOut} boxSize={5} color="red.600" />
+                                                <Text 
+                                                    fontWeight={600}
+                                                    color="red.600"
+                                                >
+                                                    Logout
+                                                </Text>
+                                            </Flex>
                                         </Box>
                                     </>
                                 )}

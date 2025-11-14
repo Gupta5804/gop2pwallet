@@ -369,6 +369,9 @@ export default function DashboardPage() {
                             variant="ghost"
                             size="sm"
                             color="teal.600"
+                            px={4}
+                            py={2}
+                            h="auto"
                             _dark={{ color: "teal.400" }}
                             _hover={{
                                 bg: "teal.50",
@@ -458,6 +461,9 @@ export default function DashboardPage() {
                             variant="ghost"
                             size="sm"
                             color="teal.600"
+                            px={4}
+                            py={2}
+                            h="auto"
                             _dark={{ color: "teal.400" }}
                             _hover={{
                                 bg: "teal.50",
@@ -535,7 +541,7 @@ export default function DashboardPage() {
                         </Text>
                     </VStack>
 
-                    {/* Action Buttons */}
+                    {/* Action Buttons - Send Money & Request Money */}
                     <HStack
                         gap={{ base: 3, md: 4 }}
                         wrap="wrap"
@@ -546,6 +552,9 @@ export default function DashboardPage() {
                             bg="linear-gradient(135deg, #0E7C86 0%, #14B8A6 100%)"
                             color="white"
                             fontWeight={600}
+                            px={{ base: 6, md: 8 }}
+                            py={{ base: 3, md: 4 }}
+                            h="auto"
                             onClick={() => {
                                 sendMoneyDialog.open("send-money", {
                                     onTransactionSuccess: fetchDashboardData,
@@ -566,6 +575,9 @@ export default function DashboardPage() {
                             variant="outline"
                             borderColor="teal.600"
                             color="teal.600"
+                            px={{ base: 6, md: 8 }}
+                            py={{ base: 3, md: 4 }}
+                            h="auto"
                             _dark={{ borderColor: "teal.400", color: "teal.400" }}
                             fontWeight={600}
                             onClick={() => {
@@ -610,6 +622,8 @@ export default function DashboardPage() {
                                 fontWeight={600}
                                 fontSize={{ base: "sm", md: "md" }}
                                 pb={4}
+                                px={4}
+                                py={2}
                                 borderBottomWidth="2px"
                                 borderBottomColor="transparent"
                                 _selected={{
@@ -639,6 +653,8 @@ export default function DashboardPage() {
                                 fontWeight={600}
                                 fontSize={{ base: "sm", md: "md" }}
                                 pb={4}
+                                px={4}
+                                py={2}
                                 borderBottomWidth="2px"
                                 borderBottomColor="transparent"
                                 _selected={{
