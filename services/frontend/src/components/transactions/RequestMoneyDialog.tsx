@@ -101,7 +101,7 @@ export const requestMoneyDialog = createOverlay<RequestMoneyDialogProps>((props)
         <Dialog.Root 
             open={open}
             onOpenChange={onOpenChange}
-            closeOnEsc={true}
+            closeOnEscape
             closeOnInteractOutside={true}
             {...rest}
         >
