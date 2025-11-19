@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  user-service:
+    image: guptarishabhhh/gop2p-user:latest
+    restart: always
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - GIN_MODE=release
+
+  wallet-service:
+    image: guptarishabhhh/gop2p-wallet:latest
+    restart: always
+    depends_on:
+      - user-service
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - GIN_MODE=release
+      - WALLET_SERVICE_GRPC_PORT=:50052
+      - WALLET_SERVICE_REST_PORT=:8081
+
+  transaction-service:
+    image: guptarishabhhh/gop2p-transaction:latest
+    restart: always
+    depends_on:
+      - user-service
+      - wallet-service
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - GIN_MODE=release
+
+  notification-service:
+    image: guptarishabhhh/gop2p-notification:latest
+    restart: always
+    env_file: .env
+    environment:
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - GIN_MODE=release
+
+  nginx:
+    image: guptarishabhhh/gop2p-nginx:latest
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - user-service
+      - wallet-service
+      - transaction-service
+      - notification-service

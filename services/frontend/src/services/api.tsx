@@ -43,9 +43,10 @@ export interface RequestMoneyPayload {
     amount: number;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || `/api/v1`;
 // --- Axios Client setup ---
 const apiClient = axios.create({
-    baseURL: '/api/v1',
+    baseURL: API_URL,
 })
 
 // 2. Add a request interceptor
