@@ -86,9 +86,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         ws.current.onmessage = (event) => {
             const message = JSON.parse(event.data);
+            console.log("WebSocket message received:", message);
             const currentUser = userRef.current;
 
-            if (!currentUser) return;
+            if (!currentUser){
+                console.log("Message received but no current user");
+                return;
+            } 
 
             const amount = (message.amount / 100).toFixed(2);
 
