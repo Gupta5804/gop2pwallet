@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Box, 
-    Container, 
-    Heading, 
-    Spinner, 
+    Box,
+    Container,
+    Heading,
+    Spinner,
     Text,
     Flex,
     Card,
@@ -42,7 +42,7 @@ interface ProfileStats {
 export default function UserProfilePage() {
     const { username } = useParams<{ username: string }>();
     const { user: loggedInUser } = useAuth();
-    
+
     const { ref, inView } = useInView({
         threshold: 0,
         rootMargin: "200px",
@@ -71,10 +71,10 @@ export default function UserProfilePage() {
         if (!username) return;
         setIsLoadingProfile(true);
         setError(null);
-        
+
         try {
             let userProfile: User;
-            
+
             // Check if viewing own profile - if so, use loggedInUser data if available
             if (loggedInUser && loggedInUser.username === username) {
                 userProfile = loggedInUser;
@@ -84,11 +84,11 @@ export default function UserProfilePage() {
                 console.log("Fetching profile for user:", username);
                 userProfile = (await api.getUserProfile(username)).data;
             }
-            
+
             if (!userProfile || !userProfile.id) {
                 throw new Error("Invalid user profile data");
             }
-            
+
             setProfileUser(userProfile);
             setOffset(0);
             setHasMore(true);
@@ -98,10 +98,10 @@ export default function UserProfilePage() {
             setIsLoadingTxns(true);
             const history = (await api.getTransactionHistory(PAGE_LIMIT, 0, userProfile.id)).data;
             setTransactions(history || []);
-            
+
             // Calculate stats from first page
             calculateStats(history || [], userProfile.id);
-            
+
             if (!history || history.length < PAGE_LIMIT) {
                 setHasMore(false);
             } else {
@@ -201,7 +201,7 @@ export default function UserProfilePage() {
         return (
             <Container centerContent py={{ base: 12, md: 20 }}>
                 <VStack gap={4}>
-                    <Spinner size="xl" color="teal.600" thickness="4px" />
+                    <Spinner size="xl" color="teal.600" borderWidth="4px" />
                     <Text color="gray.500" _dark={{ color: "gray.400" }} fontWeight="500">
                         Loading profile...
                     </Text>
@@ -237,7 +237,7 @@ export default function UserProfilePage() {
                 {/* Profile Header Card */}
                 <Card.Root
                     bg="white"
-                    _dark={{ bg: "gray.800" , borderColor: "gray.700" }}
+                    _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                     borderWidth="1px"
                     borderColor="gray.200"
                     boxShadow="sm"
@@ -248,15 +248,15 @@ export default function UserProfilePage() {
                     }}
                 >
                     <Card.Body p={{ base: 6, md: 8 }}>
-                        <Flex 
-                            direction={{ base: 'column', sm: 'row' }} 
+                        <Flex
+                            direction={{ base: 'column', sm: 'row' }}
                             align={{ base: 'center', sm: 'flex-start' }}
                             gap={{ base: 8, md: 10 }}
                             justify="space-between"
                             width="100%"
                         >
                             {/* Left: Avatar and User Info */}
-                            <Flex 
+                            <Flex
                                 direction={{ base: 'column', sm: 'row' }}
                                 align={{ base: 'center', sm: 'flex-start' }}
                                 gap={{ base: 6, md: 8 }}
@@ -264,14 +264,14 @@ export default function UserProfilePage() {
                                 minW="0"
                             >
                                 {/* Avatar with Border */}
-                                <Avatar.Root 
-                                    size={{ base: "2xl", md: "3xl" }}
+                                <Avatar.Root
+                                    size={{ base: "2xl", md: "2xl" }}
                                     flexShrink={0}
                                     borderWidth="3px"
                                     borderColor="teal.300"
                                     _dark={{ borderColor: "teal.700" }}
                                 >
-                                    <Avatar.Fallback 
+                                    <Avatar.Fallback
                                         name={profileUser.username}
                                         fontSize={{ base: "2xl", md: "3xl" }}
                                         fontWeight="700"
@@ -279,21 +279,21 @@ export default function UserProfilePage() {
                                 </Avatar.Root>
 
                                 {/* User Details */}
-                                <VStack 
+                                <VStack
                                     align={{ base: 'center', sm: 'start' }}
                                     gap={2.5}
                                     flex="1"
                                     width={{ base: 'full', sm: 'auto' }}
                                 >
                                     {/* Name with Badge */}
-                                    <Flex 
-                                        align="center" 
-                                        gap={3} 
-                                        wrap="wrap" 
+                                    <Flex
+                                        align="center"
+                                        gap={3}
+                                        wrap="wrap"
                                         justify={{ base: 'center', sm: 'flex-start' }}
                                         width="100%"
                                     >
-                                        <Heading 
+                                        <Heading
                                             size={{ base: "lg", md: "xl" }}
                                             fontWeight="700"
                                             letterSpacing="-0.02em"
@@ -303,8 +303,8 @@ export default function UserProfilePage() {
                                             {profileUser.firstName} {profileUser.lastName}
                                         </Heading>
                                         {isOwnProfile && (
-                                            <Badge 
-                                                colorPalette="teal" 
+                                            <Badge
+                                                colorPalette="teal"
                                                 variant="solid"
                                                 fontSize="xs"
                                                 fontWeight="700"
@@ -315,9 +315,9 @@ export default function UserProfilePage() {
                                             </Badge>
                                         )}
                                     </Flex>
-                                    
+
                                     {/* Username */}
-                                    <Text 
+                                    <Text
                                         fontSize={{ base: "base", md: "lg" }}
                                         color="gray.600"
                                         _dark={{ color: "gray.400" }}
@@ -327,7 +327,7 @@ export default function UserProfilePage() {
                                     </Text>
 
                                     {/* Email */}
-                                    <Text 
+                                    <Text
                                         fontSize={{ base: "sm", md: "base" }}
                                         color="gray.500"
                                         _dark={{ color: "gray.500" }}
@@ -336,7 +336,7 @@ export default function UserProfilePage() {
                                     </Text>
 
                                     {/* Joined Date */}
-                                    <HStack 
+                                    <HStack
                                         gap={2}
                                         fontSize={{ base: "sm", md: "base" }}
                                         color="gray.500"
@@ -353,7 +353,7 @@ export default function UserProfilePage() {
 
                             {/* Right: Action Buttons */}
                             {!isOwnProfile && (
-                                <VStack 
+                                <VStack
                                     gap={3}
                                     align={{ base: 'stretch', sm: 'flex-end' }}
                                     width={{ base: 'full', sm: 'auto' }}
@@ -452,7 +452,7 @@ export default function UserProfilePage() {
                             {/* Total Received */}
                             <Card.Root
                                 bg="white"
-                                _dark={{ bg: "gray.800" ,borderColor: "gray.700" }}
+                                _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                                 borderWidth="1px"
                                 borderColor="gray.200"
                                 boxShadow="sm"
@@ -482,7 +482,7 @@ export default function UserProfilePage() {
                             {/* Net Balance */}
                             <Card.Root
                                 bg="white"
-                                _dark={{ bg: "gray.800" ,borderColor: "gray.700" }}
+                                _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                                 borderWidth="1px"
                                 borderColor="gray.200"
                                 boxShadow="sm"
@@ -498,18 +498,18 @@ export default function UserProfilePage() {
                                         <Text fontSize="xs" fontWeight="700" color="blue.600" _dark={{ color: "blue.400" }}>
                                             Net Balance
                                         </Text>
-                                        <Heading 
-                                            size="lg" 
+                                        <Heading
+                                            size="lg"
                                             fontWeight="700"
                                             color={
-                                                stats.totalReceived >= stats.totalSent 
-                                                    ? "green.600" 
+                                                stats.totalReceived >= stats.totalSent
+                                                    ? "green.600"
                                                     : "red.600"
                                             }
                                             _dark={{
                                                 color:
-                                                    stats.totalReceived >= stats.totalSent 
-                                                        ? "green.400" 
+                                                    stats.totalReceived >= stats.totalSent
+                                                        ? "green.400"
                                                         : "red.400"
                                             }}
                                         >
@@ -525,7 +525,7 @@ export default function UserProfilePage() {
                             {/* Total Users Connected */}
                             <Card.Root
                                 bg="white"
-                                _dark={{ bg: "gray.800" ,borderColor: "gray.700" }}
+                                _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                                 borderWidth="1px"
                                 borderColor="gray.200"
                                 boxShadow="sm"
@@ -567,13 +567,13 @@ export default function UserProfilePage() {
 
                 {/* Transaction History Section */}
                 <VStack align="stretch" gap={5}>
-                    <Heading 
+                    <Heading
                         size="md"
                         fontWeight="700"
                         fontSize={{ base: "lg", md: "xl" }}
                     >
-                        {isOwnProfile 
-                            ? "Your Transaction History" 
+                        {isOwnProfile
+                            ? "Your Transaction History"
                             : `Transactions with @${profileUser.username}`
                         }
                     </Heading>
@@ -581,7 +581,7 @@ export default function UserProfilePage() {
                     {transactions.length === 0 && !isLoadingTxns ? (
                         <Card.Root
                             bg="gray.50"
-                            _dark={{ bg: "gray.900" ,borderColor: "gray.700" }}
+                            _dark={{ bg: "gray.900", borderColor: "gray.700" }}
                             borderWidth="2px"
                             borderColor="gray.200"
                             borderStyle="dashed"
@@ -590,22 +590,22 @@ export default function UserProfilePage() {
                                 <Center>
                                     <VStack gap={4} align="center">
                                         <Icon as={LuArrowUpRight} boxSize={12} color="gray.300" _dark={{ color: "gray.600" }} />
-                                        <Text 
-                                            fontWeight="600" 
+                                        <Text
+                                            fontWeight="600"
                                             color="gray.500"
                                             _dark={{ color: "gray.400" }}
                                             fontSize="base"
                                         >
                                             No transactions yet
                                         </Text>
-                                        <Text 
-                                            fontSize="sm" 
+                                        <Text
+                                            fontSize="sm"
                                             color="gray.400"
                                             _dark={{ color: "gray.500" }}
                                             textAlign="center"
                                             maxW="sm"
                                         >
-                                            {isOwnProfile 
+                                            {isOwnProfile
                                                 ? "Start sending or requesting money to see your transaction history"
                                                 : `No transactions between you and @${profileUser.username}`
                                             }
@@ -616,26 +616,26 @@ export default function UserProfilePage() {
                         </Card.Root>
                     ) : (
                         <Stack gap={4} width="100%">
-                            <TransactionList 
-                                transactions={transactions} 
-                                currentUser={loggedInUser} 
+                            <TransactionList
+                                transactions={transactions}
+                                currentUser={loggedInUser}
                                 title={isOwnProfile ? "Your Transactions" : `Transactions with ${profileUser.username}`}
                             />
 
                             {hasMore && (
                                 <Center ref={ref} py={8}>
-                                    <Spinner 
-                                        size="md" 
+                                    <Spinner
+                                        size="md"
                                         color="teal.600"
-                                        thickness="4px"
+                                        borderWidth="4px"
                                     />
                                 </Center>
                             )}
 
                             {!hasMore && transactions.length > 0 && (
                                 <Center py={8}>
-                                    <Text 
-                                        fontSize="sm" 
+                                    <Text
+                                        fontSize="sm"
                                         color="gray.500"
                                         _dark={{ color: "gray.400" }}
                                         fontWeight="500"

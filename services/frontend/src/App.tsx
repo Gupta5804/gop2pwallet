@@ -13,6 +13,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import AllRequestsPage from './pages/AllRequestPage';
 import AllTransactionsPage from './pages/AllTransactionsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import { EngineeringPage } from './pages/EngineeringPage';
 
 /**
  * App Component
@@ -33,6 +34,7 @@ function App() {
         {/* These routes are accessible to everyone */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/engineering" element={<EngineeringPage />} />
 
         {/* Protected Routes */}
         {/* These routes are wrapped in the ProtectedRoute component to ensure authentication */}

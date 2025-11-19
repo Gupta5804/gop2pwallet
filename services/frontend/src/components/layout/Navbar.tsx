@@ -1,7 +1,7 @@
 // src/components/layout/Navbar.tsx
-import { 
-    Box, 
-    Flex, 
+import {
+    Box,
+    Flex,
     Avatar,
     Icon,
     IconButton,
@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import UserSearch from '@/components/ui/UserSearch';
 import { User } from '@/services/api';
 import { useState, useEffect, useRef } from 'react';
-import { LuMenu, LuX, LuUser, LuLogOut } from 'react-icons/lu';
+import { LuMenu, LuX, LuUser, LuLogOut, LuZap } from 'react-icons/lu';
 
 export default function NavBar() {
     const { user, logout } = useAuth();
@@ -38,7 +38,7 @@ export default function NavBar() {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                dropdownRef.current && 
+                dropdownRef.current &&
                 !dropdownRef.current.contains(event.target as Node) &&
                 avatarRef.current &&
                 !avatarRef.current.contains(event.target as Node)
@@ -69,7 +69,7 @@ export default function NavBar() {
     const closeMobileMenu = () => setMobileMenuOpen(false);
 
     return (
-        <Box 
+        <Box
             as="nav"
             position="sticky"
             top={0}
@@ -82,18 +82,18 @@ export default function NavBar() {
             borderBottomWidth={scrolled ? "0px" : "1px"}
             borderBottomColor="rgba(255, 255, 255, 0.1)"
         >
-            <Flex 
-                align="center" 
+            <Flex
+                align="center"
                 justify="space-between"
-                maxW="container.2xl" 
-                mx="auto" 
+                maxW="container.2xl"
+                mx="auto"
                 px={{ base: 4, md: 8 }}
                 py={{ base: 2, md: 3 }}
                 gap={4}
             >
                 {/* Logo - Left Side */}
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-                    <Flex 
+                    <Flex
                         align="center"
                         gap={2}
                         _hover={{
@@ -104,25 +104,25 @@ export default function NavBar() {
                         <Image
                             src="/logos/gop2pwallet.png"
                             alt="GoPay Logo"
-                            h={{ base: '32px', md: '40px' }}
+                            h={{ base: '70px', md: '70px' }}
                             w="auto"
                             transition="all 0.2s ease"
                             _hover={{
-                                transform: 'scale(1.05)',
+                                transform: 'scale(1.3)',
                             }}
                         />
                     </Flex>
                 </Link>
 
                 {/* Search Bar - Center (Hidden on mobile) */}
-                <Box 
+                <Box
                     display={{ base: 'none', md: 'block' }}
                     flex={1}
                     maxW="400px"
                     mx={4}
                 >
-                    <UserSearch 
-                        onUserSelected={handleUserNavigation} 
+                    <UserSearch
+                        onUserSelected={handleUserNavigation}
                         zIndex="docked"
                     />
                 </Box>
@@ -148,7 +148,7 @@ export default function NavBar() {
                     {/* User Profile Avatar with Custom Dropdown - Show on all screens */}
                     {user && (
                         <Box position="relative" ref={avatarRef}>
-                            <Avatar.Root 
+                            <Avatar.Root
                                 size={{ base: 'sm', md: 'md' }}
                                 _hover={{
                                     transform: 'scale(1.08)',
@@ -160,7 +160,7 @@ export default function NavBar() {
                                 borderColor="rgba(255, 255, 255, 0.3)"
                                 onClick={() => setDropdownOpen(!dropdownOpen)}
                             >
-                                <Avatar.Fallback 
+                                <Avatar.Fallback
                                     name={user.username}
                                     bg="rgba(255, 255, 255, 0.25)"
                                     color="white"
@@ -185,7 +185,8 @@ export default function NavBar() {
                                     py={0}
                                     overflow="hidden"
                                     animation="slideDown 200ms ease-out"
-                                    sx={{
+                                    css={{
+                                        animation: "slideDown 200ms ease-out",
                                         '@keyframes slideDown': {
                                             from: {
                                                 opacity: 0,
@@ -206,7 +207,7 @@ export default function NavBar() {
                                         borderColor="gray.100"
                                         bg="linear-gradient(135deg, #F0FDFA 0%, #F0F9FF 100%)"
                                     >
-                                        <Text 
+                                        <Text
                                             fontSize="sm"
                                             fontWeight={700}
                                             color="#0E7C86"
@@ -215,7 +216,7 @@ export default function NavBar() {
                                             {user.username}
                                         </Text>
                                     </Box>
-                                    
+
                                     {/* Profile Item */}
                                     <Box
                                         px={4}
@@ -237,7 +238,32 @@ export default function NavBar() {
                                         <Icon as={LuUser} boxSize={4} color="#14B8A6" />
                                         My Profile
                                     </Box>
-                                    
+
+                                    {/* Engineering Page */}
+                                    <Box
+                                        px={4}
+                                        py={3}
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={3}
+                                        fontSize="sm"
+                                        fontWeight={500}
+                                        color="gray.700"
+                                        _hover={{
+                                            bg: '#F0FDFA',
+                                            color: '#0E7C86',
+                                            transition: 'all 0.2s ease',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => {
+                                            navigate('/engineering');
+                                            setDropdownOpen(false);
+                                        }}
+                                    >
+                                        <Icon as={LuZap} boxSize={4} color="#14B8A6" />
+                                        Engineering
+                                    </Box>
+
                                     {/* Logout Item */}
                                     <Box
                                         px={4}
@@ -267,8 +293,8 @@ export default function NavBar() {
             </Flex>
 
             {/* Mobile Menu Drawer */}
-            <Drawer.Root 
-                open={mobileMenuOpen} 
+            <Drawer.Root
+                open={mobileMenuOpen}
                 onOpenChange={(details) => {
                     if (!details.open) {
                         closeMobileMenu();
@@ -282,13 +308,13 @@ export default function NavBar() {
                         bg="white"
                         color="gray.900"
                     >
-                        <Drawer.CloseTrigger 
+                        <Drawer.CloseTrigger
                             position="absolute"
                             top={4}
                             insetEnd={4}
                             asChild
                         >
-                            <IconButton 
+                            <IconButton
                                 variant="ghost"
                                 size="lg"
                                 aria-label="Close menu"
@@ -298,21 +324,21 @@ export default function NavBar() {
                         </Drawer.CloseTrigger>
 
                         <Drawer.Body pt={16} pb={8}>
-                            <Flex 
-                                flexDirection="column" 
+                            <Flex
+                                flexDirection="column"
                                 gap={4}
                             >
                                 {/* Mobile Search */}
                                 <Box mb={4}>
-                                    <Text 
-                                        fontSize="sm" 
-                                        fontWeight={600} 
+                                    <Text
+                                        fontSize="sm"
+                                        fontWeight={600}
                                         mb={2}
                                         color="gray.600"
                                     >
                                         Find User
                                     </Text>
-                                    <UserSearch 
+                                    <UserSearch
                                         onUserSelected={(user) => {
                                             handleUserNavigation(user);
                                             closeMobileMenu();
@@ -347,8 +373,8 @@ export default function NavBar() {
                                                     <Text fontWeight={600} color="#0E7C86">
                                                         My Profile
                                                     </Text>
-                                                    <Text 
-                                                        fontSize="sm" 
+                                                    <Text
+                                                        fontSize="sm"
                                                         color="gray.600"
                                                     >
                                                         @{user.username}
@@ -377,7 +403,7 @@ export default function NavBar() {
                                         >
                                             <Flex gap={3} align="center">
                                                 <Icon as={LuLogOut} boxSize={5} color="red.600" />
-                                                <Text 
+                                                <Text
                                                     fontWeight={600}
                                                     color="red.600"
                                                 >

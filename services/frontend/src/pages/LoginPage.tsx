@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
     Box,
     Button,
     VStack,
@@ -27,8 +27,8 @@ export default function LoginPage() {
     const { login, googleLogin, isAuthenticated } = useAuth();
 
     useEffect(() => {
-        if(isAuthenticated){
-            navigate('/',{ replace: true});
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
         }
     }, [isAuthenticated, navigate]);
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await login({email, password});
+            await login({ email, password });
             navigate('/', { replace: true });
         } catch (error) {
             console.error("Login Failed", error);
@@ -173,6 +173,29 @@ export default function LoginPage() {
                             </VStack>
                         </HStack>
                     </VStack>
+
+
+                    {/* Engineering Link */}
+                    <Box pt={8}>
+                        <ChakraLink
+                            asChild
+                            color="white"
+                            opacity={0.8}
+                            fontSize="sm"
+                            fontWeight={500}
+                            _hover={{
+                                opacity: 1,
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            <ReactRouterLink to="/engineering">
+                                <HStack gap={2}>
+                                    <Text>View System Architecture</Text>
+                                    <Icon as={LuArrowRight} />
+                                </HStack>
+                            </ReactRouterLink>
+                        </ChakraLink>
+                    </Box>
                 </VStack>
             </Box>
 
@@ -335,6 +358,6 @@ export default function LoginPage() {
                     </Text>
                 </VStack>
             </Box>
-        </Box>
+        </Box >
     );
 }

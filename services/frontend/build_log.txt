@@ -1,0 +1,17 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/components/layout/Navbar.tsx(188,37): error TS2322: Type '{ children: Element[]; ref: RefObject<HTMLDivElement | null>; position: "absolute"; top: "calc(100% + 8px)"; right: "0"; bg: "white"; boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)"; ... 8 more ...; sx: { ...; }; }' is not assignable to type 'IntrinsicAttributes & Omit<PatchHtmlProps<Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "ref">>, "offset" | ... 835 more ... | keyof PolymorphicProps> & Omit<...> & PolymorphicProps & { ...; }'.
+  Property 'sx' does not exist on type 'IntrinsicAttributes & Omit<PatchHtmlProps<Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "ref">>, "offset" | ... 835 more ... | keyof PolymorphicProps> & Omit<...> & PolymorphicProps & { ...; }'.
+src/pages/AllTransactionsPage.tsx(66,21): error TS2322: Type '{ size: "xl"; color: "teal.600"; thickness: string; }' is not assignable to type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+  Property 'thickness' does not exist on type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+src/pages/AllTransactionsPage.tsx(141,29): error TS2322: Type '{ size: "md"; color: "teal.600"; thickness: string; }' is not assignable to type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+  Property 'thickness' does not exist on type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+src/pages/UserProfilePage.tsx(204,57): error TS2322: Type '{ size: "xl"; color: "teal.600"; thickness: string; }' is not assignable to type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+  Property 'thickness' does not exist on type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+src/pages/UserProfilePage.tsx(268,37): error TS2322: Type '{ base: "2xl"; md: "3xl"; }' is not assignable to type 'ConditionalValue<"sm" | "md" | "lg" | "xl" | "2xl" | "2xs" | "xs" | "full" | undefined>'.
+  Types of property 'md' are incompatible.
+    Type '"3xl"' is not assignable to type 'ConditionalValue<"sm" | "md" | "lg" | "xl" | "2xl" | "2xs" | "xs" | "full" | undefined>'.
+src/pages/UserProfilePage.tsx(630,41): error TS2322: Type '{ size: "md"; color: "teal.600"; thickness: string; }' is not assignable to type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.
+  Property 'thickness' does not exist on type 'IntrinsicAttributes & SpinnerProps & RefAttributes<HTMLSpanElement>'.

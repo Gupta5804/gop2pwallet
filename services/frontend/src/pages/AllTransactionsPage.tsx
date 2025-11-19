@@ -33,8 +33,8 @@ export default function AllTransactionsPage() {
         }
     }, []);
 
-    useEffect(() => { 
-        loadInitialData(); 
+    useEffect(() => {
+        loadInitialData();
     }, [loadInitialData]);
 
     const loadMore = useCallback(async () => {
@@ -60,10 +60,10 @@ export default function AllTransactionsPage() {
     if (isLoading) {
         return (
             <Container centerContent py={20}>
-                <Spinner 
-                    size="xl" 
+                <Spinner
+                    size="xl"
                     color="teal.600"
-                    thickness="4px"
+                    borderWidth="4px"
                 />
             </Container>
         );
@@ -74,7 +74,7 @@ export default function AllTransactionsPage() {
             <VStack align="stretch" gap={6}>
                 {/* Header Section */}
                 <VStack align="start" gap={2} width="100%">
-                    <Heading 
+                    <Heading
                         size={{ base: "xl", md: "2xl" }}
                         fontWeight={700}
                         letterSpacing="-0.02em"
@@ -87,7 +87,7 @@ export default function AllTransactionsPage() {
                         _dark={{ color: "gray.400" }}
                         fontWeight={500}
                     >
-                        {transactions.length === 0 
+                        {transactions.length === 0
                             ? "No transactions yet. Send or request money to get started."
                             : `Showing all your transactions (${transactions.length} total)`
                         }
@@ -99,13 +99,13 @@ export default function AllTransactionsPage() {
                     {transactions.length === 0 ? (
                         <Center p={12}>
                             <VStack gap={3} align="center">
-                                <Icon 
-                                    as={LuTrendingUp} 
-                                    boxSize={12} 
+                                <Icon
+                                    as={LuTrendingUp}
+                                    boxSize={12}
                                     color="gray.300"
                                     _dark={{ color: "gray.600" }}
                                 />
-                                <Text 
+                                <Text
                                     color="gray.500"
                                     _dark={{ color: "gray.400" }}
                                     fontWeight={600}
@@ -113,8 +113,8 @@ export default function AllTransactionsPage() {
                                 >
                                     No transactions found
                                 </Text>
-                                <Text 
-                                    fontSize="sm" 
+                                <Text
+                                    fontSize="sm"
                                     color="gray.400"
                                     _dark={{ color: "gray.500" }}
                                     textAlign="center"
@@ -124,21 +124,21 @@ export default function AllTransactionsPage() {
                             </VStack>
                         </Center>
                     ) : (
-                        <TransactionList 
-                            transactions={transactions}  
+                        <TransactionList
+                            transactions={transactions}
                             currentUser={user} // Pass current user from auth context
                             title="All Transactions"
                         />
                     )}
                 </Box>
-                
+
                 {/* Sentinel for infinite scroll */}
                 {hasMore && (
                     <Center ref={ref} py={8}>
-                        <Spinner 
-                            size="md" 
+                        <Spinner
+                            size="md"
                             color="teal.600"
-                            thickness="3px"
+                            borderWidth="3px"
                         />
                     </Center>
                 )}
