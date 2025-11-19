@@ -58,7 +58,7 @@ export default function AllRequestsPage() {
             <Heading mb={6}>Pending Requests</Heading>
             <Stack gap={4}>
                 {requests.length === 0 ? (
-                    <Text color="fg.muted">No pending requests.</Text>
+                    <Text color="gray.500" _dark={{ color: "gray.400" }}>No pending requests.</Text>
                 ) : (
                     // Pass loadInitialData so approving/rejecting refreshes the list
                     <PendingRequestList requests={requests} onAction={loadInitialData} title="Pending Requests" />
@@ -66,11 +66,11 @@ export default function AllRequestsPage() {
 
                 {hasMore && (
                     <Center ref={ref} py={4}>
-                        <Spinner size="sm" color="fg.muted" />
+                        <Spinner size="sm" color="gray.500" _dark={{ color: "gray.400" }} />
                     </Center>
                 )}
                 {!hasMore && requests.length > 0 && (
-                     <Center py={4} color="fg.subtle" fontSize="sm">
+                    <Center py={4} color="gray.500" _dark={{ color: "gray.400" }} fontSize="sm">
                         No more requests
                     </Center>
                 )}

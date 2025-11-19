@@ -20,8 +20,9 @@ import {
 } from '@chakra-ui/react';
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { LuZap, LuLock, LuSmile, LuArrowRight, LuCheck } from "react-icons/lu";
+import { ColorModeButton } from "@/components/ui/color-mode";
 
-export default function SignupPage(){
+export default function SignupPage() {
     const [step, setStep] = useState(1); // 1: Basic Info, 2: Email & Password
     const [username, setUsername] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -37,7 +38,7 @@ export default function SignupPage(){
     // Redirect if user is already logged in
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/',{replace: true});
+            navigate('/', { replace: true });
         }
     }, [isAuthenticated, navigate]);
 
@@ -64,27 +65,27 @@ export default function SignupPage(){
         setStep(1);
     };
 
-    const handleSubmit = async (e: React.FormEvent)=>{
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
         try {
             // 1. Make the API call to the register endpoint
-            const response = await apiClient.post('/auth/register', { 
+            const response = await apiClient.post('/auth/register', {
                 username,
                 firstName,
-                lastName, 
-                email, 
+                lastName,
+                email,
                 password
             })
             // 2. Extract the token from the successful response
             const { token } = response.data;
 
-            if(token) {
+            if (token) {
                 // 3. Log the user in automatically with the new token
                 login(token);
                 //4. Navigate to the main dashboard
-                navigate('/',{replace:true});
+                navigate('/', { replace: true });
             } else {
                 throw new Error("Signup Successful, but no token was provided");
             }
@@ -96,7 +97,7 @@ export default function SignupPage(){
                 type: 'error',
                 duration: 5000,
             });
-            console.error("Signup error:",error);
+            console.error("Signup error:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -252,7 +253,11 @@ export default function SignupPage(){
                 justifyContent="center"
                 p={{ base: 4, md: 8 }}
                 bg={{ base: 'white', _dark: 'gray.900' }}
+                position="relative"
             >
+                <Box position="absolute" top={4} right={4}>
+                    <ColorModeButton />
+                </Box>
                 <VStack maxW="sm" width="100%" gap={8}>
                     {/* Header */}
                     <VStack align="start" width="100%" gap={2}>
@@ -260,7 +265,7 @@ export default function SignupPage(){
                             {step === 1 ? 'Create Account' : 'Set Password'}
                         </Heading>
                         <Text color="gray.500" _dark={{ color: 'gray.400' }}>
-                            {step === 1 
+                            {step === 1
                                 ? 'Tell us about yourself'
                                 : 'Secure your account'
                             }

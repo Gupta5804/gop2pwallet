@@ -9,14 +9,14 @@ import App from './App.tsx'
 const googleClientID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 ReactDom.createRoot(document.getElementById('root')!).render(
   //<React.StrictMode>
-    <GoogleOAuthProvider clientId={googleClientID}> 
+  <GoogleOAuthProvider clientId={googleClientID}>
     <BrowserRouter>
-      <Provider>
+      <Provider defaultTheme="dark">
         <AuthProvider>
           <App />
         </AuthProvider>
       </Provider>
     </BrowserRouter>
-    </GoogleOAuthProvider>
+  </GoogleOAuthProvider>
   //</React.StrictMode>,
 )

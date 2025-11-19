@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { toaster } from "@/components/ui/toaster"
+import { ColorModeButton } from "@/components/ui/color-mode"
 import { useNavigate, Link as ReactRouterLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { LuZap, LuLock, LuSmile, LuArrowRight } from 'react-icons/lu';
@@ -207,7 +208,11 @@ export default function LoginPage() {
                 justifyContent="center"
                 p={{ base: 4, md: 8 }}
                 bg={{ base: 'white', _dark: 'gray.900' }}
+                position="relative"
             >
+                <Box position="absolute" top={4} right={4}>
+                    <ColorModeButton />
+                </Box>
                 <VStack maxW="sm" width="100%" gap={8}>
                     {/* Header */}
                     <VStack align="start" width="100%" gap={2}>

@@ -143,7 +143,7 @@ export default function AllTransactionsPage() {
                     </Center>
                 )}
                 {!hasMore && transactions.length > 0 && (
-                    <Center py={6} color="fg.subtle" fontSize="sm">
+                    <Center py={6} color="gray.500" _dark={{ color: "gray.400" }} fontSize="sm">
                         <Text fontWeight={500} color="gray.500" _dark={{ color: "gray.400" }}>
                             ✓ No more transactions to load
                         </Text>

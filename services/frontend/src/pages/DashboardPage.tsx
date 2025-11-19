@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { BalanceResponse, Transaction, api } from "@/services/api";
 import { toaster } from "@/components/ui/toaster";
-import { 
+import {
     Heading,
     Box,
     Text,
@@ -508,8 +508,6 @@ export default function DashboardPage() {
 
     return (
         <Box
-            minH="100vh"
-            bg={{ base: "white", _dark: "gray.900" }}
             py={{ base: 6, md: 8 }}
             px={{ base: 4, md: 8 }}
         >

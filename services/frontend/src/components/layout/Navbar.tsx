@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import UserSearch from '@/components/ui/UserSearch';
+import { ColorModeButton } from '@/components/ui/color-mode';
 import { User } from '@/services/api';
 import { useState, useEffect, useRef } from 'react';
 import { LuMenu, LuX, LuUser, LuLogOut, LuZap } from 'react-icons/lu';
@@ -129,6 +130,8 @@ export default function NavBar() {
 
                 {/* Right Side - User Menu & Mobile Toggle */}
                 <Flex align="center" gap={{ base: 2, md: 4 }}>
+                    <ColorModeButton />
+
                     {/* Mobile Menu Toggle - Show only on small screens */}
                     <IconButton
                         display={{ base: 'flex', md: 'none' }}
