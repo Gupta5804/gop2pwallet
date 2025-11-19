@@ -71,9 +71,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
             return;
         }
 
+        let wsBaseUrl = "ws://localhost"; //
+        if(window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+            const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+            wsBaseUrl = `${protocol}://${window.location.host}`;
+        }
         // Connect to Websocket Server
         // Nginx will route ws://localhost/ws to notification-service
-        const wsUrl = `ws://localhost/ws?token=${token}`;
+        const wsUrl = `${wsBaseUrl}/ws?token=${token}`;
         ws.current = new WebSocket(wsUrl);
 
         ws.current.onopen = () => {
