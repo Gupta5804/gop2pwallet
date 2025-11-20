@@ -45,11 +45,22 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - GIN_MODE=release
 
+  frontend:
+    image: guptarishabhhh/gop2p-frontend:latest
+    env_file: .env
+    restart: always
+    expose:
+      - "80"
+    environment:
+      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
   nginx:
     image: guptarishabhhh/gop2p-nginx:latest
     ports:
       - "80:80"
+      - "443:443"
     restart: always
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - user-service
       - wallet-service

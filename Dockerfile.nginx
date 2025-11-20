@@ -1,0 +1,16 @@
+# Use the standard Nginx image
+FROM nginx:stable-alpine
+
+# Remove default configuration
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy your CUSTOM production nginx.conf to the container
+# Make sure your local 'nginx.conf' is the one configured for SSL/yourdomain.com
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose the listening ports
+EXPOSE 80
+EXPOSE 443
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

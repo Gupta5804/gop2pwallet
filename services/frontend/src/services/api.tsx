@@ -47,6 +47,7 @@ const API_URL = `/api/v1`;
 // --- Axios Client setup ---
 const apiClient = axios.create({
     baseURL: API_URL,
+    withCredentials: true,
 })
 
 // 2. Add a request interceptor
