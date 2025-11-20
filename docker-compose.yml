@@ -1,14 +1,17 @@
 version: '3.8'
 
-services: # define services(containers) to be run
-  user-service: # name of the service
-    build: # build the image using the Dockerfile in the specified context
+services:
+  # define services(containers) to be run
+  user-service:
+    # name of the service
+    build:
+      # build the image using the Dockerfile in the specified context
       context: . # path to the directory containing the Dockerfile
       dockerfile: ./services/user-service/Dockerfile # name of the Dockerfile
     #ports:
     #  - "8080:8080" # map port 8080 of the container to port 8080 on the host
     env_file:
-      - ./services/user-service/.env 
+      - ./services/user-service/.env
     depends_on:
       db:
         condition: service_healthy # ensure the db service is started before this one
@@ -88,16 +91,17 @@ services: # define services(containers) to be run
       - frontend
   db:
     image: postgres:14-alpine # use the official PostgreSQL image
-    ports: # map the database port
+    ports:
+      # map the database port
       - "5432:5432" # map port 5432 of the container to port 5432 on the host
-    volumes: 
+    volumes:
       - postgres_data:/var/lib/postgresql/data # Persist database data
     environment:
       - POSTGRES_USER=user # database username
       - POSTGRES_PASSWORD=password # database password
       - POSTGRES_DB=gop2pwallet # database name
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d gop2pwallet"]
+      test: [ "CMD-SHELL", "pg_isready -U user -d gop2pwallet" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -109,14 +113,13 @@ services: # define services(containers) to be run
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics","check_running"]
+      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
       interval: 30s
       timeout: 30s
       retries: 3
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
-      
 
 volumes:
   postgres_data: # define a named volume for PostgreSQL data persistence
