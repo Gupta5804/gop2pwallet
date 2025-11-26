@@ -37,7 +37,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to listen: %v", err)
 		}
-		s := grpc.NewServer() // create a new gRPC server
+		s := grpc.NewServer()                            // create a new gRPC server
 		pb.RegisterWalletServiceServer(s, walletService) // register the WalletService server
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
@@ -59,6 +59,8 @@ func main() {
 			walletRoutes.GET("/balance", authMiddleware, walletHandler.GetBalance)
 		}
 	}
+
+	router.GET("/health", walletHandler.HealthCheck)
 
 	log.Printf("REST server listening on %s", cfg.RESTPort)
 	if err := router.Run(cfg.RESTPort); err != nil { // start the REST server

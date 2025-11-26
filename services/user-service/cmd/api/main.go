@@ -2,11 +2,12 @@ package main
 
 import (
 	"log" // Importing log for logging
-	"github.com/gin-gonic/gin" // Importing Gin web framework
-	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/config"
-	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/storage" 
+
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/api"
+	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/config"
 	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/service"
+	"github.com/Gupta5804/gop2pwallet/services/user-service/internal/storage"
+	"github.com/gin-gonic/gin" // Importing Gin web framework
 )
 
 func main() {
@@ -26,8 +27,7 @@ func main() {
 	// 3. Create the API layer (UserHandler) and inject the service
 	userHandler := api.NewUserHandler(userService) // Creating a new UserHandler
 
-
-	router:= gin.Default()
+	router := gin.Default()
 
 	// 4. Define routes and apply middleware
 	// Create a top-level route group for versioning
@@ -37,9 +37,9 @@ func main() {
 		// Sub-group for public routes (no authentication required)
 		userPublic := v1.Group("/users")
 		{
-			userPublic.GET("/search",userHandler.SearchUsers) // Search users endpoint
-			userPublic.GET("/:username",userHandler.GetUserProfile) // Get user by ID endpoint
-			
+			userPublic.GET("/search", userHandler.SearchUsers)       // Search users endpoint
+			userPublic.GET("/:username", userHandler.GetUserProfile) // Get user by ID endpoint
+
 		}
 		// v1.GET("/health",func(c *gin.Context){
 		// 	c.JSON(200,gin.H{
@@ -50,12 +50,12 @@ func main() {
 		// Sub-group fro routes that require JWT authentication
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register", userHandler.RegisterUser) // Register user endpoint
-			auth.POST("/login",userHandler.LoginUser) // Login user endpoint
-			auth.POST("/google",userHandler.HandleGoogleTokenLogin) // for oauth2/google
-			
+			auth.POST("/register", userHandler.RegisterUser)         // Register user endpoint
+			auth.POST("/login", userHandler.LoginUser)               // Login user endpoint
+			auth.POST("/google", userHandler.HandleGoogleTokenLogin) // for oauth2/google
+
 		}
-		authProtected := auth.Group("") // Protected routes group
+		authProtected := auth.Group("")            // Protected routes group
 		authProtected.Use(api.AuthMiddleware(cfg)) // Applying the AuthMiddleware to this group
 		{
 			// The '/me' will now be at /api/v1/auth/me
@@ -67,20 +67,11 @@ func main() {
 
 	}
 	// health check endpoint
-	router.GET("/health",func(c *gin.Context){
-		c.JSON(200,gin.H{
-			"Status":"UP",
-			"Service":"user-service",
-		})
-	})
+	router.GET("/health", userHandler.HealthCheck)
 	log.Println("Starting user-service on port 8080")
-	
+
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
-	
 }
-
-
-

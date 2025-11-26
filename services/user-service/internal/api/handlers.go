@@ -200,3 +200,10 @@ func (h *UserHandler) HandleGoogleTokenLogin(c *gin.Context) {
 // 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000/dashboard?token="+token)
 // }
 
+// HealthCheck returns the service status
+func (h *UserHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "active",
+		"service": "user-service",
+	})
+}

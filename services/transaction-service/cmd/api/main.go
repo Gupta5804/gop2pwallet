@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Gupta5804/gop2pwallet/services/transaction-service/internal/api"
 	"github.com/Gupta5804/gop2pwallet/services/transaction-service/internal/config"
@@ -42,17 +41,16 @@ func main() {
 
 	// 5. Initialize Service Layer (Business logic)
 	// This is where we inject the dependencies
-	txService:= service.NewTransactionService(store, walletClient, publisher)
+	txService := service.NewTransactionService(store, walletClient, publisher)
 
 	// 6. Intialize API layer (handlers)
 	txHandlers := api.NewTransactionHandlers(txService)
 
 	// 7. Setup gin router
-	router :=  gin.Default()
+	router := gin.Default()
 
-	router.GET("health",func(c *gin.Context){
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	router.GET("/health", txHandlers.HealthCheck)
+
 	// setup API v1 routes
 	v1 := router.Group("/api/v1")
 	{

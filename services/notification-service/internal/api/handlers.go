@@ -95,3 +95,11 @@ func (h *WebSocketHandler) validateToken(tokenString string) (uuid.UUID, error) 
 	}
 	return userID, jwt.ErrInvalidKey
 }
+
+// HealthCheck returns the service status
+func (h *WebSocketHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "active",
+		"service": "notification-service",
+	})
+}

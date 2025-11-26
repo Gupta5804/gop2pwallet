@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Gupta5804/gop2pwallet/services/notification-service/internal/api"
 	"github.com/Gupta5804/gop2pwallet/services/notification-service/internal/config"
@@ -41,9 +40,7 @@ func main() {
 	router := gin.Default()
 
 	// Health check endpoint
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	router.GET("/health", wsHandler.HealthCheck)
 
 	// WebSocket endpoint
 	router.GET("/ws", wsHandler.HandleWebSocket)

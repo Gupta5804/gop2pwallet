@@ -1,4 +1,5 @@
 package api
+
 import (
 	"net/http"
 
@@ -22,7 +23,7 @@ func (h *WalletHandler) GetBalance(c *gin.Context) {
 	// 1. Get userID from the context (set by AuthMiddleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error":"User ID not found in token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in token"})
 		return
 	}
 	userIDStr, ok := userID.(string)
@@ -34,7 +35,7 @@ func (h *WalletHandler) GetBalance(c *gin.Context) {
 	// 2. Call the service layer(our gRPC method)
 	// We are calling our own service's gRPC method, which is clean and efficient
 	// We don't have to deal with gRPC internals
-	req := &pb.GetBalanceRequest{UserId: userIDStr} // Construct the request
+	req := &pb.GetBalanceRequest{UserId: userIDStr}            // Construct the request
 	res, err := h.service.GetBalance(c.Request.Context(), req) // Call the gRPC method
 	if err != nil {
 		// This will catch "wallet not found" errors from the service layer
@@ -45,4 +46,12 @@ func (h *WalletHandler) GetBalance(c *gin.Context) {
 	// 3. Return the response as JSON
 	// We'll return the raw gRPC response object , which marshals to JSON perfectly
 	c.JSON(http.StatusOK, res)
+}
+
+// HealthCheck returns the service status
+func (h *WalletHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "active",
+		"service": "wallet-service",
+	})
 }

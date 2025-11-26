@@ -1,32 +1,64 @@
 import { Box, SimpleGrid, Text, Badge, Stack, Flex, Icon } from "@chakra-ui/react"
 import { FaDocker, FaGlobe, FaDatabase } from "react-icons/fa"
 import { SiNginx, SiGo, SiRabbitmq, SiReact } from "react-icons/si"
+import { useServiceHealth } from "../../hooks/useServiceHealth"
 
-const ContainerBox = ({ name, port, icon, colorPalette, type }: { name: string, port: string, icon: React.ReactNode, colorPalette: string, type: string }) => (
-    <Box
-        p={4}
-        borderWidth="1px"
-        borderRadius="lg"
-        bg="bg.panel"
-        boxShadow="sm"
-        position="relative"
-        overflow="hidden"
-    >
-        <Box position="absolute" top={0} right={0} px={2} py={1} bg={`${colorPalette}.100`} _dark={{ bg: `${colorPalette}.900` }} borderBottomLeftRadius="md">
-            <Text fontSize="xs" fontWeight="bold" color={`${colorPalette}.700`} _dark={{ color: `${colorPalette}.200` }}>{type}</Text>
+const HEALTH_ENDPOINTS: Record<string, string> = {
+    "user-service": "/health/user",
+    "wallet-service": "/health/wallet",
+    "transaction-service": "/health/transaction",
+    "notification-service": "/health/notification",
+};
+
+const ContainerBox = ({ name, port, icon, colorPalette, type }: { name: string, port: string, icon: React.ReactNode, colorPalette: string, type: string }) => {
+    const endpoint = HEALTH_ENDPOINTS[name];
+    const { data: status, isLoading, isError } = endpoint
+        ? useServiceHealth(name, endpoint)
+        : { data: 'static', isLoading: false, isError: false };
+
+    let badgeColor = 'blue';
+    let badgeText = 'Active';
+
+    if (isLoading) {
+        badgeColor = 'gray';
+        badgeText = 'Checking...';
+    } else if (status === 'online') {
+        badgeColor = 'green';
+        badgeText = 'Running';
+    } else if (status === 'offline' || isError) {
+        badgeColor = 'red';
+        badgeText = 'Offline';
+    } else if (status === 'static') {
+        badgeColor = 'blue';
+        badgeText = 'Active';
+    }
+
+    return (
+        <Box
+            p={4}
+            borderWidth="1px"
+            borderRadius="lg"
+            bg="bg.panel"
+            boxShadow="sm"
+            position="relative"
+            overflow="hidden"
+        >
+            <Box position="absolute" top={0} right={0} px={2} py={1} bg={`${colorPalette}.100`} _dark={{ bg: `${colorPalette}.900` }} borderBottomLeftRadius="md">
+                <Text fontSize="xs" fontWeight="bold" color={`${colorPalette}.700`} _dark={{ color: `${colorPalette}.200` }}>{type}</Text>
+            </Box>
+            <Stack gap={3}>
+                <Flex align="center" gap={3}>
+                    <Box fontSize="2xl" color={`${colorPalette}.500`} flexShrink={0}>{icon}</Box>
+                    <Box minW={0}>
+                        <Text fontWeight="bold" truncate>{name}</Text>
+                        <Text fontSize="xs" color="fg.muted">Port: {port}</Text>
+                    </Box>
+                </Flex>
+                <Badge size="sm" variant="surface" colorPalette={badgeColor}>{badgeText}</Badge>
+            </Stack>
         </Box>
-        <Stack gap={3}>
-            <Flex align="center" gap={3}>
-                <Box fontSize="2xl" color={`${colorPalette}.500`}>{icon}</Box>
-                <Box>
-                    <Text fontWeight="bold">{name}</Text>
-                    <Text fontSize="xs" color="fg.muted">Port: {port}</Text>
-                </Box>
-            </Flex>
-            <Badge size="sm" variant="surface" colorPalette={colorPalette}>Running</Badge>
-        </Stack>
-    </Box>
-)
+    );
+}
 
 export const ContainerMap = () => {
     return (

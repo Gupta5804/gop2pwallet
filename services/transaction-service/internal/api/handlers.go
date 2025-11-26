@@ -177,11 +177,11 @@ func (h *TransactionHandlers) HandleGetPending(c *gin.Context) {
 	}
 	// get limit query parameter
 	limitStr := c.Query("limit")
-	limit,_ := strconv.Atoi(limitStr) // Atoi returns 0 on error, which is fine
+	limit, _ := strconv.Atoi(limitStr) // Atoi returns 0 on error, which is fine
 	offsetStr := c.Query("offset")
-	offset,_ := strconv.Atoi(offsetStr) // Atoi returns 0 on error, which is fine
+	offset, _ := strconv.Atoi(offsetStr) // Atoi returns 0 on error, which is fine
 	// 2. Call the service
-	transactions, err := h.service.GetPendingTransactions(c.Request.Context(), userID,limit,offset)
+	transactions, err := h.service.GetPendingTransactions(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -205,18 +205,18 @@ func (h *TransactionHandlers) HandleGetHistory(c *gin.Context) {
 	limit, _ := strconv.Atoi(limitStr) // Atoi returns 0 on error, which is fine
 	offsetStr := c.Query("offset")
 	offset, _ := strconv.Atoi(offsetStr) // Atoi returns 0 on error, which is fine
-	var withUserID uuid.NullUUID // Optional "with_user_id" query parameter (for ?with_user_id=123e4567-e89b-12d3-a456-426655440000)
+	var withUserID uuid.NullUUID         // Optional "with_user_id" query parameter (for ?with_user_id=123e4567-e89b-12d3-a456-426655440000)
 	withUserIDStr := c.Query("with_user")
 	if withUserIDStr != "" {
 		parsedID, err := uuid.Parse(withUserIDStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error":"Invalid with_user ID format"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid with_user ID format"})
 			return
 		}
 		withUserID = uuid.NullUUID{UUID: parsedID, Valid: true}
 	}
 	// 3. Call the service
-	transactions, err := h.service.GetTransactionHistory(c.Request.Context(), userID, withUserID,limit,offset)
+	transactions, err := h.service.GetTransactionHistory(c.Request.Context(), userID, withUserID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -247,4 +247,12 @@ func (h *TransactionHandlers) getUserIDFromContext(c *gin.Context) (uuid.UUID, e
 	}
 
 	return userID, nil
+}
+
+// HealthCheck returns the service status
+func (h *TransactionHandlers) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "active",
+		"service": "transaction-service",
+	})
 }
